@@ -1,0 +1,52 @@
+# RicistRice — dependency manifest
+#
+# Every program the repo relies on is listed here, next to what uses it, so a
+# fresh Ubuntu install can be rebuilt with `scripts/bootstrap.sh` (see the
+# "Dependencies" rule in CLAUDE.md). Keep the Stack decisions table in CLAUDE.md
+# in sync whenever a stack choice changes.
+#
+# Sections:
+#   [ppa]    add-apt-repository sources, added before [apt] is installed
+#   [apt]    one apt package per line, then `# used by: ...`
+#   [manual] no clean Ubuntu package — `name :: how to install it`. bootstrap.sh
+#            only reports these as found/TODO; `name` must be the command it
+#            provides, so it can be detected
+#
+# Lines starting with # are comments and blank lines are ignored.
+# Base-system tools (coreutils, grep, sed, findutils, diffutils, procps) aren't listed.
+
+[ppa]
+ppa:cppiber/hyprland      # used by: hyprland (Ubuntu's own packages are stale)
+
+[apt]
+# compositor
+hyprland                  # used by: the whole session; hyprctl in scripts/reload.sh, check.sh
+
+# desktop apps launched from dotfiles/hypr/hyprland.conf
+waybar                    # used by: exec-once (interim bar until Quickshell), scripts/reload.sh
+alacritty                 # used by: Super+Return terminal bind
+rofi                      # used by: Super+D app launcher bind
+nwg-displays              # used by: writes hypr/monitors.conf (GUI monitor layout)
+
+# repo tooling
+git                       # used by: scripts/commit-push.sh, capture.sh
+jq                        # used by: .claude/hooks/*.sh
+rsync                     # used by: scripts/capture.sh
+whiptail                  # used by: manage.sh menu
+shellcheck                # used by: scripts/check.sh, .claude/hooks/check-scripts.sh
+
+# Quickshell build deps (C++/QML on Qt6, built with CMake; see [manual])
+qt6-base-dev
+qt6-declarative-dev
+qt6-wayland-dev
+qt6-svg-dev
+cmake
+ninja-build
+build-essential
+pkg-config
+
+[manual]
+# name :: why it's manual, and where to look
+quickshell :: no Ubuntu/PPA package as of this writing — build from source against Qt6/CMake; check the upstream repo's own docs for the current build steps rather than guessing
+awww :: successor to swww, no Ubuntu package — check its upstream repo for the current install method (cargo or release binary) before running anything. Currently installed in /usr/local/bin (awww + awww-daemon)
+matugen :: no Ubuntu package — install via `cargo install matugen` (requires a Rust toolchain: apt install cargo, or rustup) or grab a release binary from its GitHub releases page
