@@ -31,9 +31,9 @@ bug, and a stale-dependency build failure). Going manual/hand-adapted means:
 | Layer | Choice | Notes |
 |---|---|---|
 | Compositor | Hyprland | via `cppiber/hyprland` PPA (Ubuntu repos are stale) |
-| Bar/shell | Quickshell (QML) | not waybar — chosen for full shell capability (bar + launcher + lock + notifications in one), at the cost of editing QML instead of a flat config |
+| Bar/shell | Quickshell (QML) | not waybar — chosen for full shell capability (bar + launcher + lock + notifications in one), at the cost of editing QML instead of a flat config. Installed from `ppa:avengemedia/danklinux` (DankMaterialShell's PPA), not built from source |
 | Wallpaper daemon | `awww` | successor to `swww`, which is now archived/unmaintained |
-| Color/theme | `matugen` as the per-theme accent generator; curated palettes per theme, not a single global wallpaper-derived scheme | pywal is a lighter alternative if matugen output looks off |
+| Color/theme | `matugen` as the per-theme accent generator; curated palettes per theme, not a single global wallpaper-derived scheme | from the same `avengemedia/danklinux` PPA. pywal is a lighter alternative if matugen output looks off |
 | Display manager | LightDM | already confirmed working, no change needed |
 | NVIDIA driver | 595.91.07 (already installed) | exceeds the 555+ target for Hyprland/Wayland |
 
@@ -57,7 +57,7 @@ matching the Quickshell + matugen stack decision.
 ~/projects/RicistRice/
 ├── dotfiles/              # the config — deploy.sh copies each folder into ~/.config/
 │   ├── hypr/              #   → ~/.config/hypr
-│   ├── waybar/            #   → ~/.config/waybar
+│   ├── waybar/            #   → ~/.config/waybar (leftover placeholder, see Open items; don't maintain)
 │   ├── quickshell/        #   → ~/.config/quickshell (scaffold only, skipped until it has content)
 │   └── ...                #   (mako/, hyprlock/, etc. if/as added)
 ├── refs/                  # untouched reference clones — read/copy from, don't edit
@@ -147,20 +147,19 @@ of our own rice. Never edit files inside `refs/`; copy the parts we want into
   terminal/code work, not a black-box automation.
 - **Check the current [project decisions doc]** (tracked in the separate
   Claude.ai project, not this repo) before assuming a stack choice — it's the
-  source of truth for what's been decided vs. still open (e.g. aesthetic
-  direction is still unresolved as of now).
+  source of truth for what's been decided vs. still open.
 
 ## Open items to resolve before/while building this out
 
 - Only `cozy-pixelated` is being built now; `anime-stylish` and `cold-winter`
   are scaffolded as placeholder themes until it ships
-- First real Quickshell install + companion pieces (launcher, lock screen,
-  notification daemon) still pending on the machine itself
-- `dotfiles/hypr/monitors.conf` (written by nwg-displays) isn't sourced by
-  `hyprland.conf` yet, so it currently has no effect
-- `hyprland.conf` has `exec-once = hyprpaper`, but hyprpaper isn't installed
-  and the stack decision is `awww` (installed). Either switch the line to
-  `awww-daemon` or reverse the decision; hyprpaper is deliberately not in
-  `packages.txt` until that's settled
+- Quickshell is installed (0.3.1, via the PPA), but no shell config exists yet:
+  `dotfiles/quickshell/` is still an empty scaffold, and the companion pieces
+  (launcher, lock screen, notification daemon) are still pending
+- **`exec-once = waybar` / `exec-once = hyprpaper` in `hyprland.conf`, and all of
+  `dotfiles/waybar/`, are unintentional leftovers** from the first copy of the
+  user's local config, not stack choices. Don't fix, extend, or debug them.
+  They get removed in the same change that makes Quickshell (`exec-once = qs`)
+  and `awww-daemon` take over. hyprpaper is deliberately not in `packages.txt`
 - No automated QML check yet — `check.sh` covers shell scripts and Hyprland
-  only; add one once Quickshell is installed
+  only. Quickshell is installed now, so this is unblocked

@@ -17,10 +17,15 @@
 
 [ppa]
 ppa:cppiber/hyprland      # used by: hyprland (Ubuntu's own packages are stale)
+ppa:avengemedia/danklinux # used by: quickshell, matugen (DankMaterialShell's PPA; neither is in Ubuntu's repos)
 
 [apt]
 # compositor
 hyprland                  # used by: the whole session; hyprctl in scripts/reload.sh, check.sh
+
+# shell + theming
+quickshell                # used by: dotfiles/quickshell (provides qs), scripts/reload.sh
+matugen                   # used by: per-theme accent colors (see Stack decisions in CLAUDE.md)
 
 # desktop apps launched from dotfiles/hypr/hyprland.conf
 waybar                    # used by: exec-once (interim bar until Quickshell), scripts/reload.sh
@@ -35,18 +40,6 @@ rsync                     # used by: scripts/capture.sh
 whiptail                  # used by: manage.sh menu
 shellcheck                # used by: scripts/check.sh, .claude/hooks/check-scripts.sh
 
-# Quickshell build deps (C++/QML on Qt6, built with CMake; see [manual])
-qt6-base-dev
-qt6-declarative-dev
-qt6-wayland-dev
-qt6-svg-dev
-cmake
-ninja-build
-build-essential
-pkg-config
-
 [manual]
 # name :: why it's manual, and where to look
-quickshell :: no Ubuntu/PPA package as of this writing — build from source against Qt6/CMake; check the upstream repo's own docs for the current build steps rather than guessing
 awww :: successor to swww, no Ubuntu package — check its upstream repo for the current install method (cargo or release binary) before running anything. Currently installed in /usr/local/bin (awww + awww-daemon)
-matugen :: no Ubuntu package — install via `cargo install matugen` (requires a Rust toolchain: apt install cargo, or rustup) or grab a release binary from its GitHub releases page

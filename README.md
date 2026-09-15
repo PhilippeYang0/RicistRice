@@ -4,9 +4,9 @@ I want to rice the ricest rice on my ubuntu.
 ## Setup
 
 1. `./bootstrap.sh` — installs apt/PPA dependencies listed in `packages.txt`
-   (Hyprland, Quickshell build deps, etc.). Prints a TODO list for anything
-   with no clean Ubuntu package (Quickshell, awww, matugen) instead of
-   guessing an install command for those.
+   (Hyprland, Quickshell, matugen, etc.). Prints a TODO list for anything
+   with no clean Ubuntu package (currently just awww) instead of guessing an
+   install command for those.
 2. `./install.sh` — symlinks `dotfiles/*` into `~/.config/*`, backing up
    any existing config first.
 3. `./uninstall.sh` — reverses step 2, restoring the most recent backup.
