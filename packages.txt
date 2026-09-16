@@ -9,37 +9,97 @@
 #   [ppa]    add-apt-repository sources, added before [apt] is installed
 #   [apt]    one apt package per line, then `# used by: ...`
 #   [manual] no clean Ubuntu package — `name :: how to install it`. bootstrap.sh
-#            only reports these as found/TODO; `name` must be the command it
-#            provides, so it can be detected
+#            only reports these as found/TODO. `name` is what it checks for:
+#            a command on PATH, `font:<family>` (fc-list), or `path:<file>`
 #
 # Lines starting with # are comments and blank lines are ignored.
 # Base-system tools (coreutils, grep, sed, findutils, diffutils, procps) aren't listed.
 
 [ppa]
-ppa:cppiber/hyprland      # used by: hyprland (Ubuntu's own packages are stale)
-ppa:avengemedia/danklinux # used by: quickshell, matugen (DankMaterialShell's PPA; neither is in Ubuntu's repos)
+ppa:cppiber/hyprland      # used by: hyprland, hyprpicker (Ubuntu's own packages are stale)
+ppa:avengemedia/danklinux # used by: quickshell-git, matugen, cliphist (DankMaterialShell's PPA; none are in Ubuntu's repos)
 
 [apt]
 # compositor
-hyprland                  # used by: the whole session; hyprctl in scripts/reload.sh, check.sh
+hyprland                  # used by: the whole session; hyprctl in scripts/reload.sh, check.sh, theme.sh
+xdg-desktop-portal-hyprland # used by: the Hyprland session (screen sharing, screenshots for apps); caelestia's hypr component
+xdg-desktop-portal-gtk    # used by: the Hyprland session (file pickers); caelestia's hypr component
 
 # shell + theming
-quickshell                # used by: dotfiles/quickshell (provides qs), scripts/reload.sh
-matugen                   # used by: per-theme accent colors (see Stack decisions in CLAUDE.md)
+quickshell-git            # used by: dotfiles/quickshell (provides qs), scripts/reload.sh, keybinds. caelestia-shell needs the git build, not tagged quickshell (the two conflict; apt swaps them)
+matugen                   # used by: dotfiles/ricistrice/bin/theme.sh (colours from each theme's seed)
+jq                        # used by: dotfiles/ricistrice/bin/theme.sh, .claude/hooks/*.sh
+libnotify-bin             # used by: theme.sh --notify, the shell (notify-send), test notification keybind
 
-# desktop apps launched from dotfiles/hypr/hyprland.conf
-waybar                    # used by: exec-once (interim bar until Quickshell), scripts/reload.sh
-alacritty                 # used by: Super+Return terminal bind
-rofi                      # used by: Super+D app launcher bind
-nwg-displays              # used by: writes hypr/monitors.conf (GUI monitor layout)
+# caelestia-shell runtime (programs its QML runs)
+ddcutil                   # used by: the shell (external monitor brightness)
+brightnessctl             # used by: the shell (laptop brightness)
+network-manager           # used by: the shell (nmcli, network panel)
+lm-sensors                # used by: the shell (temperatures)
+libxml2-utils             # used by: the shell (xmllint, keyboard layout names)
+swappy                    # used by: the shell (screenshot editing)
+qalc                      # used by: the shell (launcher calculator, "open in terminal")
+wl-clipboard              # used by: the shell, clipboard history execs and keybinds (wl-copy/wl-paste)
+qt6-image-formats-plugins # used by: the shell (webp/gif images)
+qt6-svg-plugins           # used by: the shell (svg icons)
+libqt6sql6-sqlite         # used by: the shell (launcher app history database)
+qml6-module-qtquick       # used by: the shell (QML modules it imports; also listed so apt never autoremoves them)
+qml6-module-qtquick-controls  # used by: the shell
+qml6-module-qtquick-effects   # used by: the shell
+qml6-module-qtquick-layouts   # used by: the shell
+qml6-module-qtquick-shapes    # used by: the shell
+qml6-module-qtquick-templates # used by: the shell
+# power-profiles-daemon is left out on purpose: the shell's power-profile
+# switch needs it, but it's a system service that changes CPU power behaviour,
+# not something to install for a rice. Install it yourself if you want that.
+
+# caelestia-shell plugin build deps (scripts/build-shell.sh)
+cmake                     # used by: scripts/build-shell.sh (m3shapes, caelestia plugin)
+ninja-build               # used by: scripts/build-shell.sh
+meson                     # used by: scripts/build-shell.sh (libcava)
+pkg-config                # used by: scripts/build-shell.sh
+g++                       # used by: scripts/build-shell.sh
+qt6-base-dev              # used by: scripts/build-shell.sh
+qt6-declarative-dev       # used by: scripts/build-shell.sh
+qt6-shadertools-dev       # used by: scripts/build-shell.sh (m3shapes and plugin shaders)
+libqalculate-dev          # used by: scripts/build-shell.sh (plugin calculator)
+libpipewire-0.3-dev       # used by: scripts/build-shell.sh (plugin audio)
+libaubio-dev              # used by: scripts/build-shell.sh (plugin beat detection)
+libsensors-dev            # used by: scripts/build-shell.sh (plugin temperatures)
+libfftw3-dev              # used by: scripts/build-shell.sh (libcava)
+libiniparser-dev          # used by: scripts/build-shell.sh (libcava)
+
+# desktop apps launched from dotfiles/hypr
+alacritty                 # used by: terminal keybinds, shell.json apps.terminal, sysmon workspace (hypr/utils/functions.lua)
+firefox                   # used by: Super+W (hypr/variables.lua browser)
+mousepad                  # used by: Super+C (hypr/variables.lua editor)
+nemo                      # used by: Super+E, shell.json apps.explorer
+pavucontrol               # used by: Ctrl+Alt+V, shell.json apps.audio
+mpv                       # used by: shell.json apps.playback
+btop                      # used by: Ctrl+Shift+Escape sysmon workspace
+rofi                      # used by: Super+V / Super+Alt+V clipboard pickers
+cliphist                  # used by: clipboard history (hypr/hyprland/execs.lua, keybinds)
+grim                      # used by: Print full screenshot keybind
+hyprpicker                # used by: Super+Shift+C colour picker
+wireplumber               # used by: volume keybinds (wpctl)
+gnome-keyring             # used by: hypr/hyprland/execs.lua (secrets)
+policykit-1-gnome         # used by: hypr/hyprland/execs.lua (polkit agent; Cinnamon has its own, Hyprland needs one)
+bluez                     # used by: hypr/hyprland/execs.lua (mpris-proxy)
+libglib2.0-bin            # used by: hypr/hyprland/execs.lua (gsettings cursor)
+nwg-displays              # used by: writes hypr/monitors.lua and workspaces.lua (GUI monitor layout)
 
 # repo tooling
-git                       # used by: scripts/commit-push.sh, capture.sh
-jq                        # used by: .claude/hooks/*.sh
+git                       # used by: scripts/commit-push.sh, capture.sh, build-shell.sh
 rsync                     # used by: scripts/capture.sh
 whiptail                  # used by: manage.sh menu
 shellcheck                # used by: scripts/check.sh, .claude/hooks/check-scripts.sh
 
 [manual]
 # name :: why it's manual, and where to look
-awww :: successor to swww, no Ubuntu package — check its upstream repo for the current install method (cargo or release binary) before running anything. Currently installed in /usr/local/bin (awww + awww-daemon)
+awww :: successor to swww, no Ubuntu package — check its upstream repo for the current install method (cargo or release binary) before running anything. Currently installed in /usr/local/bin (awww + awww-daemon). Used by: hypr/hyprland/execs.lua, dotfiles/ricistrice/bin/theme.sh
+path:~/.local/lib/ricistrice/qml/Caelestia/qmldir :: caelestia's QML plugin + m3shapes + libcava, not packaged for Ubuntu: run scripts/build-shell.sh (after the [apt] build deps). Used by: dotfiles/quickshell
+font:Material Symbols Rounded :: the shell's icon font. mkdir -p ~/.local/share/fonts && curl -L -o ~/.local/share/fonts/MaterialSymbolsRounded.ttf 'https://github.com/google/material-design-icons/raw/master/variablefont/MaterialSymbolsRounded%5BFILL,GRAD,opsz,wght%5D.ttf' && fc-cache
+font:Rubik :: the shell's UI font. mkdir -p ~/.local/share/fonts && curl -L -o ~/.local/share/fonts/Rubik.ttf 'https://github.com/google/fonts/raw/main/ofl/rubik/Rubik%5Bwght%5D.ttf' && fc-cache
+font:CaskaydiaCove NF :: the shell's monospace font. mkdir -p ~/.local/share/fonts/CaskaydiaCove && curl -L 'https://github.com/ryanoasis/nerd-fonts/releases/latest/download/CascadiaCode.tar.xz' | tar -xJ -C ~/.local/share/fonts/CaskaydiaCove && fc-cache
+font:JetBrainsMono NF :: Hyprland group bar font (hypr/hyprland/group.lua). Already installed here; nerd-fonts release JetBrainsMono.tar.xz, same steps as CaskaydiaCove
+discord :: .deb from discord.com (no apt repo). Used by: Super+D communication workspace (hypr/utils/functions.lua)

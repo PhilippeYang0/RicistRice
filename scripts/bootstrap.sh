@@ -91,11 +91,28 @@ if [ "${#to_install[@]}" -gt 0 ] && [ "$dry_run" -eq 0 ]; then
 fi
 
 # --- manual installs ---------------------------------------------------------
+# `name` is a command on PATH, `font:<family>` (asked of fontconfig) or
+# `path:<file>` (a leading ~ means $HOME).
 todo=0
 for m in "${manuals[@]}"; do
   name="${m%% ::*}"
-  if command -v "$name" >/dev/null; then
-    say ok "$name (manual, found at $(command -v "$name"))"
+  case "$name" in
+    font:*)
+      family="${name#font:}"
+      # no grep -q: with pipefail, fc-list's SIGPIPE would read as "missing"
+      if fc-list : family | grep -iF -- "$family" >/dev/null; then found="installed font"; else found=""; fi
+      ;;
+    path:*)
+      file="${name#path:}"
+      file="${file/#\~/$HOME}"
+      if [ -e "$file" ]; then found="$file"; else found=""; fi
+      ;;
+    *)
+      found="$(command -v "$name" || true)"
+      ;;
+  esac
+  if [ -n "$found" ]; then
+    say ok "$name (manual, found: $found)"
   else
     say todo "$name (manual install, see packages.txt)"
     todo=1

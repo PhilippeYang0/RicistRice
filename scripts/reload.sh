@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tell running components to re-read their config. Safe to run anytime:
+# Tell running components (Hyprland, Quickshell) to re-read their config. Safe to run anytime:
 # anything not running is skipped. deploy.sh and restore.sh call this.
 #
 # usage: reload.sh
@@ -12,7 +12,19 @@ if [ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
   exit 0
 fi
 
-if hyprctl reload >/dev/null; then
+# A running Hyprland keeps the config format it started with. If that file is
+# gone (the first deploy after hyprland.conf became hyprland.lua, or a restore
+# going back), a reload would find it missing and write a default config in its
+# place. Skip the reload; the deployed config applies at next login.
+provider="$(hyprctl systeminfo 2>/dev/null | sed -n 's/^configProvider: //p')"
+case "$provider" in
+  lua) session_conf="$config_dir/hypr/hyprland.lua" ;;
+  *) session_conf="$config_dir/hypr/hyprland.conf" ;;
+esac
+
+if [ ! -f "$session_conf" ]; then
+  say skip "Hyprland (this session runs $(basename "$session_conf"), which is gone now: log out and back in)"
+elif hyprctl reload >/dev/null; then
   say reload "Hyprland"
   errors="$(hyprctl configerrors)"
   if [ -n "${errors//[[:space:]]/}" ]; then
@@ -21,15 +33,10 @@ if hyprctl reload >/dev/null; then
   fi
 fi
 
-if pgrep -x waybar >/dev/null; then
-  pkill -SIGUSR2 -x waybar
-  say reload "waybar"
-fi
-
 # Quickshell's own file watcher loses track when the folder is swapped out,
-# so restart it instead.
+# so restart it instead. -n: never start a second copy.
 if pgrep -x quickshell >/dev/null || pgrep -x qs >/dev/null; then
   qs kill >/dev/null
-  qs -d >/dev/null
+  qs -n -d >/dev/null
   say restart "quickshell"
 fi

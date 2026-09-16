@@ -37,23 +37,31 @@ for f in "${scripts[@]}"; do
 done
 
 # --- Hyprland ----------------------------------------------------------------
-hypr_conf="$dotfiles_dir/hypr/hyprland.conf"
+# Hyprland prefers hyprland.lua over hyprland.conf when both exist; check the
+# one it would actually load.
+hypr_conf="$dotfiles_dir/hypr/hyprland.lua"
+[ -f "$hypr_conf" ] || hypr_conf="$dotfiles_dir/hypr/hyprland.conf"
+hypr_rel="${hypr_conf#"$repo_dir"/}"
 if [ ! -f "$hypr_conf" ]; then
-  say skip "dotfiles/hypr/hyprland.conf (not present)"
+  say skip "dotfiles/hypr (no hyprland.lua or hyprland.conf)"
 elif ! command -v Hyprland >/dev/null; then
-  say skip "dotfiles/hypr/hyprland.conf (Hyprland not installed)"
+  say skip "$hypr_rel (Hyprland not installed)"
 elif out="$(Hyprland --verify-config -c "$hypr_conf" 2>&1)"; then
-  say pass "dotfiles/hypr/hyprland.conf"
+  say pass "$hypr_rel"
 else
-  fail "dotfiles/hypr/hyprland.conf"
-  grep '^Config error' <<<"$out" | indent
+  fail "$hypr_rel"
+  # Everything after this marker is the error report (hyprlang or Lua)
+  sed -n '/Config parsing result/,$p' <<<"$out" | sed '1d;/^$/d' | indent
 fi
 
-# Relative sources resolve next to the file being checked, so they verify the
-# repo's copy. Absolute ~/.config ones would silently verify the live copy.
-if [ -d "$dotfiles_dir/hypr" ] &&
-   grep -rnE '^\s*source\s*=\s*(~|\$HOME)/\.config/hypr/' "$dotfiles_dir/hypr" >/dev/null; then
-  say warn "dotfiles/hypr sources ~/.config/hypr/... (checks the live copy, not the repo; use ./file.conf)"
+# Relative paths resolve next to the file being checked, so they verify the
+# repo's copy: `source = ./x.conf`, and require("x") in Lua. Absolute
+# ~/.config/hypr paths would silently verify the live copy instead.
+if [ -d "$dotfiles_dir/hypr" ] && {
+     grep -rqE '^\s*source\s*=\s*(~|\$HOME)/\.config/hypr/' --include='*.conf' "$dotfiles_dir/hypr" ||
+     grep -rqE '^\s*[^-[:space:]].*\.config/hypr/' --include='*.lua' "$dotfiles_dir/hypr"
+   }; then
+  say warn "dotfiles/hypr refers to ~/.config/hypr/... (checks the live copy, not the repo; use relative paths)"
 fi
 
 echo

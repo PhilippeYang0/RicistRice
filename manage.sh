@@ -17,10 +17,11 @@ items=(
   deploy+push    "deploy, then commit-push"
   restore        "Put back a backed-up config (undo a deploy)"
   capture        "Copy live ~/.config changes back into dotfiles/"
-  reload         "Reload Hyprland and bars without changing files"
+  reload         "Reload Hyprland and the shell without changing files"
   prune-backups  "Delete old backups"
   deps           "Show missing dependencies (changes nothing)"
   bootstrap      "Install missing apt/PPA dependencies (sudo)"
+  build-shell    "Build the shell's QML plugin into ~/.local (no sudo)"
 )
 
 # whiptail draws on stdout and writes the answer to stderr; swap them to

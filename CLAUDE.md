@@ -31,9 +31,10 @@ bug, and a stale-dependency build failure). Going manual/hand-adapted means:
 | Layer | Choice | Notes |
 |---|---|---|
 | Compositor | Hyprland | via `cppiber/hyprland` PPA (Ubuntu repos are stale) |
-| Bar/shell | Quickshell (QML) | not waybar — chosen for full shell capability (bar + launcher + lock + notifications in one), at the cost of editing QML instead of a flat config. Installed from `ppa:avengemedia/danklinux` (DankMaterialShell's PPA), not built from source |
-| Wallpaper daemon | `awww` | successor to `swww`, which is now archived/unmaintained |
-| Color/theme | `matugen` as the per-theme accent generator; curated palettes per theme, not a single global wallpaper-derived scheme | from the same `avengemedia/danklinux` PPA. pywal is a lighter alternative if matugen output looks off |
+| Hyprland config format | Lua (`hyprland.lua` + `hyprland/*.lua`), ported from `refs/caelestia` | replaced the old `hyprland.conf`: caelestia's upstream is Lua, so its changes copy over without translation. Hyprland prefers `.lua` over `.conf` when both exist; a running session can't switch format live (see Open items) |
+| Bar/shell | Quickshell (QML) running caelestia-shell's QML | not waybar — chosen for full shell capability (bar + launcher + lock + notifications in one), at the cost of editing QML instead of a flat config. `quickshell-git` from `ppa:avengemedia/danklinux` (caelestia-shell needs the git build, not tagged 0.3.1). Its C++ QML plugin + m3shapes + libcava have no Ubuntu package, so `scripts/build-shell.sh` builds them user-local into `~/.local/lib/ricistrice` (no sudo, chosen over `sudo cmake --install` into /usr so nothing lands outside apt's knowledge) |
+| Wallpaper daemon | `awww` | successor to `swww`, which is now archived/unmaintained. Kept over caelestia-shell's own wallpaper layer (turned off in `shell.json`): awww plays GIFs and has a `Nearest` filter for pixel art |
+| Color/theme | `matugen` as the per-theme accent generator; curated palettes per theme, not a single global wallpaper-derived scheme | from the same `avengemedia/danklinux` PPA. pywal is a lighter alternative if matugen output looks off. Driven by our `dotfiles/ricistrice/bin/theme.sh`, which stands in for the caelestia CLI's `wallpaper`/`scheme` commands. The caelestia CLI was deliberately not used: it only lists palettes bundled inside its Python package (no per-theme palettes of our own) and writes colours into `~/.config/hypr` (constant deploy drift) |
 | Display manager | LightDM | already confirmed working, no change needed |
 | NVIDIA driver | 595.91.07 (already installed) | exceeds the 555+ target for Hyprland/Wayland |
 
@@ -49,17 +50,26 @@ whole scheme from whatever wallpaper happens to be set.
 implements a wallpaper/scheme browsing UI (`modules/launcher/services/Schemes.qml`,
 `modules/launcher/items/WallpaperItem.qml`, `modules/nexus/pages/WallpaperAndStyle.qml`)
 that matches the multi-theme-browser requirement directly, on top of already
-matching the Quickshell + matugen stack decision.
+matching the Quickshell + matugen stack decision. The Hyprland side is adapted
+from `refs/caelestia` (its dots repo). Both are adapted at pinned commits
+(README.md); the shell QML and `caelestia_rev` in `scripts/build-shell.sh`
+must always come from the same caelestia-shell commit.
+
+**How themes work**: a theme is `dotfiles/ricistrice/themes/<name>/<flavour>/<mode>.conf`
+(a matugen seed plus hand-pinned colour roles) plus a wallpaper folder
+`~/Pictures/Wallpapers/<name>/`. The shell's `>scheme` browser lists themes;
+picking a wallpaper from a theme's folder switches to that theme.
 
 ## Repo structure
 
 ```
 ~/projects/RicistRice/
 ├── dotfiles/              # the config — deploy.sh copies each folder into ~/.config/
-│   ├── hypr/              #   → ~/.config/hypr
-│   ├── waybar/            #   → ~/.config/waybar (leftover placeholder, see Open items; don't maintain)
-│   ├── quickshell/        #   → ~/.config/quickshell (scaffold only, skipped until it has content)
-│   └── ...                #   (mako/, hyprlock/, etc. if/as added)
+│   ├── hypr/              #   → ~/.config/hypr (Lua; tweak variables.lua)
+│   ├── quickshell/        #   → ~/.config/quickshell (caelestia-shell QML, Quickshell's default config)
+│   ├── caelestia/         #   → ~/.config/caelestia (the shell's shell.json overrides)
+│   ├── ricistrice/        #   → ~/.config/ricistrice (bin/theme.sh + themes/ palettes)
+│   └── ...                #   (more if/as added)
 ├── refs/                  # untouched reference clones — read/copy from, don't edit
 ├── scripts/               # one job per script, all runnable directly
 │   ├── lib.sh             #   shared paths/helpers (sourced, not run)
@@ -68,10 +78,11 @@ matching the Quickshell + matugen stack decision.
 │   ├── deploy.sh          #   check → back up live config → cp -a dotfiles/<name> → reload
 │   ├── restore.sh         #   put a backup back (undo a deploy)
 │   ├── capture.sh         #   reverse of deploy: live ~/.config/<name> → dotfiles/<name>
-│   ├── reload.sh          #   hyprctl reload, waybar SIGUSR2, restart quickshell
+│   ├── reload.sh          #   hyprctl reload (skipped if the session's config format changed), restart quickshell
 │   ├── prune-backups.sh   #   keep the newest N backups
 │   ├── commit-push.sh     #   check → git add -A → commit → push
-│   └── bootstrap.sh       #   install apt/PPA deps from packages.txt (--dry-run: just report)
+│   ├── bootstrap.sh       #   install apt/PPA deps from packages.txt (--dry-run: just report)
+│   └── build-shell.sh     #   build the shell's C++ QML plugin into ~/.local/lib/ricistrice (no-op when up to date)
 ├── manage.sh              # whiptail menu that runs the scripts above
 ├── packages.txt           # every dependency + what uses it; read by bootstrap.sh
 ├── README.md
@@ -121,9 +132,11 @@ of our own rice. Never edit files inside `refs/`; copy the parts we want into
   `replace_live` in `lib.sh` moves it into the backup folder first. Keep one job
   per script; combined actions call the single-job scripts rather than
   duplicating them. `.claude/hooks/check-scripts.sh` lints any `.sh` after an edit.
-- **Hyprland `source =` lines should use relative paths** (`./monitors.conf`),
-  so `check.sh`'s `Hyprland --verify-config` checks the repo's copy rather than
-  the live `~/.config/hypr` one.
+- **Hyprland config files load each other by relative path** — `require("x.y")`
+  in Lua (resolves to `./x/y.lua` next to `hyprland.lua`), `source = ./x.conf`
+  in hyprlang — so `check.sh`'s `Hyprland --verify-config` checks the repo's
+  copy rather than the live `~/.config/hypr` one. Runtime data that isn't
+  config (e.g. theme colours) is read from `~/.local/state`, never `~/.config/hypr`.
 - **Every dependency goes in `packages.txt`, in the same change that starts
   using it**, so a fresh Ubuntu install can be rebuilt with
   `scripts/bootstrap.sh`. "Dependency" means any program the repo relies on:
@@ -139,9 +152,12 @@ of our own rice. Never edit files inside `refs/`; copy the parts we want into
   must stay idempotent: skip added PPAs and installed packages (checked with
   `dpkg-query` status, since `dpkg -s` also matches removed packages), and
   never call `sudo` when nothing is missing.
-- **Keep `hyprland.conf` changes minimal and explicit** — only add what's
-  needed to launch Quickshell (`exec-once = qs`) and bind its IPC calls;
-  don't restructure the user's existing Hyprland config wholesale.
+- **Keep Hyprland config changes minimal and explicit** — the config is
+  caelestia's Lua modules, adapted at the user's request; per-machine tweaks
+  (apps, looks, keybinds) belong in `hypr/variables.lua`, and changes to the
+  modules should stay small and commented (what differs from caelestia and
+  why). Don't restructure it wholesale. The shell's IPC is bound through
+  Hyprland global shortcuts (`hl.dsp.global("caelestia:...")`).
 - **Prefer explaining QML/shell errors over silently "fixing" them** when the
   cause isn't obvious — this is a learning project for someone newer to
   terminal/code work, not a black-box automation.
@@ -152,14 +168,31 @@ of our own rice. Never edit files inside `refs/`; copy the parts we want into
 ## Open items to resolve before/while building this out
 
 - Only `cozy-pixelated` is being built now; `anime-stylish` and `cold-winter`
-  are scaffolded as placeholder themes until it ships
-- Quickshell is installed (0.3.1, via the PPA), but no shell config exists yet:
-  `dotfiles/quickshell/` is still an empty scaffold, and the companion pieces
-  (launcher, lock screen, notification daemon) are still pending
-- **`exec-once = waybar` / `exec-once = hyprpaper` in `hyprland.conf`, and all of
-  `dotfiles/waybar/`, are unintentional leftovers** from the first copy of the
-  user's local config, not stack choices. Don't fix, extend, or debug them.
-  They get removed in the same change that makes Quickshell (`exec-once = qs`)
-  and `awww-daemon` take over. hyprpaper is deliberately not in `packages.txt`
+  are placeholder palettes (a seed colour only) until it ships. No wallpapers
+  are chosen yet for any theme (`~/Pictures/Wallpapers/<theme>/` is the user's to fill)
+- **Base dotfiles are written but not yet deployed or run on a real session**:
+  all deps are installed (`bootstrap.sh --dry-run` exits 0), the plugin is
+  built into `~/.local/lib/ricistrice`, and the fonts are in
+  `~/.local/share/fonts`. An offscreen `qs -p dotfiles/quickshell` load resolved
+  every import (Caelestia plugin, M3Shapes, Qt modules) and only stopped at
+  "No PanelWindow backend loaded", which needs Wayland. Anything past window
+  creation is still unverified on quickshell-git 0.3.2 / Qt 6.10 until the
+  first Hyprland login after deploy (`qs log` shows its errors)
+- **The first hypr deploy must happen outside the running Hyprland session**
+  (from Cinnamon, or log out right after): a session started on `hyprland.conf`
+  would, on reload, find it gone and write a default one. `reload.sh` detects
+  this (`hyprctl systeminfo` configProvider) and skips the reload
+- Keyboard: Hyprland runs `us` (its old default) while Cinnamon uses `fr`;
+  `kbLayout` in `hypr/variables.lua` is `us` until the user says otherwise.
+  Workspace binds use keycodes so they work on either
+- Gaps vs. caelestia, all needing its CLI or non-Ubuntu apps: screen recording
+  (`services/Recorder.qml` still calls `caelestia record` + gpu-screen-recorder,
+  so its UI shows a timer while nothing records), emoji picker, paste-latest,
+  todo workspace. The launcher's wallpaper hover-preview doesn't show on the
+  desktop, since awww (not the shell) draws the wallpaper
+- `power-profiles-daemon` is deliberately not installed (system service); the
+  shell's power-profile switch does nothing without it
+- The waybar/hyprpaper leftovers are gone (removed with the Quickshell + awww
+  takeover). The live `~/.config/waybar` still exists, since deploy never deletes
 - No automated QML check yet — `check.sh` covers shell scripts and Hyprland
   only. Quickshell is installed now, so this is unblocked
