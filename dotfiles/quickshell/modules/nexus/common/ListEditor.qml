@@ -236,8 +236,10 @@ ListView {
 
                 anchors.fill: parent
                 radius: itemBg.radius
-                topLeftRadius: itemBg.topLeftRadius
-                topRightRadius: itemBg.topRightRadius
+                // RicistRice: caelestia also sets topLeftRadius/topRightRadius
+                // here, but Qt 6.10's RectangularShadow only has one radius
+                // (per-corner radii are Qt 6.11), and the shell refused to load.
+                // Only affects the drag shadow's top corners.
                 level: 3
                 opacity: 0
             }

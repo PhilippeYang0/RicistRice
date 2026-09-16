@@ -55,12 +55,15 @@ ConnectedRect {
         }
 
         StyledSpinBox {
-            from: root.from
-            to: root.to
-            stepSize: root.stepSize
-            value: root.value
+            id: spinBox
+
+            // RicistRice: real* properties, see StyledSpinBox (Qt 6.10 port)
+            realFrom: root.from
+            realTo: root.to
+            realStepSize: root.stepSize
+            realValue: root.value
             cLayer: 2
-            onValueModified: root.moved(value)
+            onValueModified: root.moved(spinBox.currentValue)
         }
     }
 }

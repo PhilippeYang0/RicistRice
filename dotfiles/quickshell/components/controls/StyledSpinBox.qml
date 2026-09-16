@@ -4,33 +4,53 @@ import Caelestia.Config
 import qs.components
 import qs.services
 
-DoubleSpinBox {
+// RicistRice: caelestia builds this on DoubleSpinBox, which only exists from
+// Qt 6.11 (Arch). Ubuntu 26.04 has Qt 6.10, where the shell refused to load
+// ("DoubleSpinBox is not a type"). This is the same control on the integer
+// SpinBox: it counts in units of 1/valueScale (0.5 is stored as 5 when
+// valueScale is 10), so decimal steps still work. Set the real* properties
+// instead of from/to/stepSize/value, and read currentValue.
+SpinBox {
     id: root
+
+    property real realFrom: 0
+    property real realTo: 99
+    property real realStepSize: 1
+    property real realValue: 0
+    readonly property int decimals: realStepSize < 1 ? Math.max(1, Math.ceil(-Math.log10(realStepSize))) : 0
+    readonly property int valueScale: Math.pow(10, decimals)
+    readonly property real currentValue: value / valueScale
 
     property int repeatRate: 400
     property int repeatDecay: 50
     property int cLayer: 1
 
     function increase(): void {
-        let newValue = Math.min(to, value + stepSize);
-        // Round to avoid floating point precision errors
-        const decimals = stepSize < 1 ? Math.max(1, Math.ceil(-Math.log10(stepSize))) : 0;
-        newValue = Math.round(newValue * Math.pow(10, decimals)) / Math.pow(10, decimals);
-        value = newValue;
+        value = Math.min(to, value + stepSize);
         valueModified();
     }
 
     function decrease(): void {
-        let newValue = Math.max(from, value - stepSize);
-        // Round to avoid floating point precision errors
-        const decimals = stepSize < 1 ? Math.max(1, Math.ceil(-Math.log10(stepSize))) : 0;
-        newValue = Math.round(newValue * Math.pow(10, decimals)) / Math.pow(10, decimals);
-        value = newValue;
+        value = Math.max(from, value - stepSize);
         valueModified();
     }
 
+    from: Math.round(realFrom * valueScale)
+    to: Math.round(realTo * valueScale)
+    stepSize: Math.max(1, Math.round(realStepSize * valueScale))
+    value: Math.round(realValue * valueScale)
+
+    textFromValue: (v, locale) => Number(v / valueScale).toLocaleString(locale, "f", decimals)
+    valueFromText: (text, locale) => Math.round(Number.fromLocaleString(locale, text) * valueScale)
+    validator: DoubleValidator {
+        bottom: root.realFrom
+        top: root.realTo
+        decimals: root.decimals
+        notation: DoubleValidator.StandardNotation
+        locale: root.locale.name
+    }
+
     editable: true
-    decimals: stepSize < 1 ? Math.max(1, Math.ceil(-Math.log10(stepSize))) : 0
     spacing: Tokens.spacing.small
 
     implicitWidth: contentItem.implicitWidth + leftPadding + rightPadding

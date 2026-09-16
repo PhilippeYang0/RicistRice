@@ -120,8 +120,10 @@ Item {
 
             anchors.fill: parent
             radius: dialogBg.radius
-            bottomLeftRadius: dialogBg.bottomLeftRadius
-            bottomRightRadius: dialogBg.bottomRightRadius
+            // RicistRice: caelestia also sets bottomLeftRadius/bottomRightRadius
+            // here, but Qt 6.10's RectangularShadow only has one radius
+            // (per-corner radii are Qt 6.11), and the shell refused to load.
+            // Only affects the dialog shadow's bottom corners.
             level: 4
             opacity: 0
         }

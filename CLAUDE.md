@@ -170,14 +170,19 @@ of our own rice. Never edit files inside `refs/`; copy the parts we want into
 - Only `cozy-pixelated` is being built now; `anime-stylish` and `cold-winter`
   are placeholder palettes (a seed colour only) until it ships. No wallpapers
   are chosen yet for any theme (`~/Pictures/Wallpapers/<theme>/` is the user's to fill)
-- **Base dotfiles are written but not yet deployed or run on a real session**:
-  all deps are installed (`bootstrap.sh --dry-run` exits 0), the plugin is
-  built into `~/.local/lib/ricistrice`, and the fonts are in
-  `~/.local/share/fonts`. An offscreen `qs -p dotfiles/quickshell` load resolved
-  every import (Caelestia plugin, M3Shapes, Qt modules) and only stopped at
-  "No PanelWindow backend loaded", which needs Wayland. Anything past window
-  creation is still unverified on quickshell-git 0.3.2 / Qt 6.10 until the
-  first Hyprland login after deploy (`qs log` shows its errors)
+- **caelestia-shell targets Qt 6.11 (Arch); Ubuntu 26.04 has Qt 6.10.2.** The
+  first Hyprland login showed a black screen with no shell: the QML failed to
+  load. Fixed in dotfiles (each marked with a `RicistRice:` comment):
+  `DoubleSpinBox` (6.11-only) → `StyledSpinBox` ported to `SpinBox` with a
+  value scale; per-corner radii on `RectangularShadow` (6.11-only) dropped in
+  `ListEditor.qml` and `DialogRowButton.qml`; the reserved word `char` as an id
+  renamed in `lock/center/InputField.qml`. With those, `qs -p dotfiles/quickshell`
+  reports "Configuration Loaded" in the live Lua session. Re-check for new
+  6.11-isms whenever caelestia QML is re-pulled: run `qs -p dotfiles/quickshell`
+  and read the errors, since Quickshell stops at the first one. The panels
+  themselves (launcher, lock, settings) haven't been clicked through yet
+- The fixed QML is **not yet deployed** to `~/.config/quickshell` (only that
+  folder differs from the repo)
 - **The first hypr deploy must happen outside the running Hyprland session**
   (from Cinnamon, or log out right after): a session started on `hyprland.conf`
   would, on reload, find it gone and write a default one. `reload.sh` detects
