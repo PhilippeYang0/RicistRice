@@ -59,6 +59,11 @@ must always come from the same caelestia-shell commit.
 (a matugen seed plus hand-pinned colour roles) plus a wallpaper folder
 `~/Pictures/Wallpapers/<name>/`. The shell's `>scheme` browser lists themes;
 picking a wallpaper from a theme's folder switches to that theme.
+The exception is the `dynamic` theme (our take on caelestia's scheme of that
+name): all colours come from the current wallpaper, from any folder, and
+changing wallpaper never leaves it. With the shell's "Smart colour scheme"
+toggle on, each wallpaper also picks its light/dark mode and variant from its
+measured lightness/colourfulness (`smart_opts` in `theme.sh`, via ImageMagick).
 
 ## Repo structure
 
@@ -181,8 +186,10 @@ of our own rice. Never edit files inside `refs/`; copy the parts we want into
   6.11-isms whenever caelestia QML is re-pulled: run `qs -p dotfiles/quickshell`
   and read the errors, since Quickshell stops at the first one. The panels
   themselves (launcher, lock, settings) haven't been clicked through yet
-- The fixed QML is **not yet deployed** to `~/.config/quickshell` (only that
-  folder differs from the repo)
+- The fixed QML is deployed and the shell runs in the Hyprland session (global
+  shortcuts `caelestia:launcher`, `caelestia:sidebar`, ... register). Deploying
+  it didn't start it at first: `reload.sh` only restarted a running shell, and
+  the login copy had crashed. `reload.sh` now starts it when it isn't running
 - **The first hypr deploy must happen outside the running Hyprland session**
   (from Cinnamon, or log out right after): a session started on `hyprland.conf`
   would, on reload, find it gone and write a default one. `reload.sh` detects

@@ -34,9 +34,13 @@ elif hyprctl reload >/dev/null; then
 fi
 
 # Quickshell's own file watcher loses track when the folder is swapped out,
-# so restart it instead. -n: never start a second copy.
+# so restart it instead. If it isn't running (e.g. it crashed at login on a
+# config error that this deploy fixes), start it. -n: never start a second copy.
 if pgrep -x quickshell >/dev/null || pgrep -x qs >/dev/null; then
   qs kill >/dev/null
   qs -n -d >/dev/null
   say restart "quickshell"
+elif [ -f "$config_dir/quickshell/shell.qml" ]; then
+  qs -n -d >/dev/null
+  say start "quickshell (wasn't running)"
 fi

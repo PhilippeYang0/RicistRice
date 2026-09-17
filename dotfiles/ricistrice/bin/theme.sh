@@ -11,6 +11,12 @@
 # Picking a wallpaper from a theme's folder switches to that theme, and picking
 # a theme puts up one of its wallpapers. (caelestia calls a palette a "scheme".)
 #
+# The theme named "dynamic" is the exception, like caelestia's scheme of that
+# name: its colours come from whatever wallpaper is set, from any folder, and
+# changing the wallpaper never switches away from it. With smart scheme on (the
+# shell's settings toggle; --no-smart turns it off for one run), each new
+# wallpaper also picks dynamic's light/dark mode and variant (see smart_opts).
+#
 # It writes only these files, none of them under ~/.config:
 #   ~/.local/state/caelestia/scheme.json          the shell's colours (services/Colours.qml)
 #   ~/.local/state/caelestia/wallpaper/path.txt   the shell's wallpaper (services/Wallpapers.qml)
@@ -27,8 +33,10 @@ state_home="${XDG_STATE_HOME:-$HOME/.local/state}"
 scheme_file="$state_home/caelestia/scheme.json"
 wall_file="$state_home/caelestia/wallpaper/path.txt"
 hypr_colours="$state_home/ricistrice/hypr-colours.lua"
+shell_config="${XDG_CONFIG_HOME:-$HOME/.config}/caelestia/shell.json"
 
 default_theme=cozy-pixelated
+dynamic_theme=dynamic # the shell checks for this name (Colours.scheme === "dynamic")
 variants=(tonalspot vibrant expressive fidelity fruitsalad monochrome neutral rainbow content)
 
 usage() {
@@ -38,6 +46,7 @@ usage:
   theme.sh wallpaper -f FILE         set it (switches theme if FILE is in a theme's folder)
   theme.sh wallpaper -r              random wallpaper from the current theme's folder
   theme.sh wallpaper -p FILE         print the colours FILE would give, change nothing
+                                     (the wallpaper commands also take --no-smart)
   theme.sh scheme list               every theme and its colours, as JSON
   theme.sh scheme get [-nfmv]        print name, flavour, mode and/or variant
   theme.sh scheme set [-n NAME] [-f FLAVOUR] [-m MODE] [-v VARIANT] [--notify]
@@ -274,13 +283,60 @@ apply() {
   fi
 }
 
-# Switch to theme NAME if FILE sits in its folder; its default variant applies
+# Switch to theme NAME if FILE sits in its folder; its default variant applies.
+# The dynamic theme stays on whatever folder FILE is in.
 adopt_theme_of() {
   local theme
+  [ "$name" != "$dynamic_theme" ] || return 0
   theme="$(theme_for_wallpaper "$1")"
   if [ -n "$theme" ] && [ "$theme" != "$name" ]; then
     name="$theme" variant=""
   fi
+}
+
+# --- Smart scheme ------------------------------------------------------------
+# On unless the shell's "Smart colour scheme" toggle is off (or --no-smart)
+smart=1
+if [ -f "$shell_config" ] &&
+   [ "$(jq -r '.services.smartScheme // true' "$shell_config" 2>/dev/null)" = false ]; then
+  smart=0
+fi
+
+# smart_opts FILE: print "MODE VARIANT" suited to FILE, from two numbers
+# ImageMagick measures on a 64x64 thumbnail (first frame of a GIF):
+#   lightness  average perceptual lightness (CIELAB L, 0-1): above 0.6 is a
+#              bright image, which gets light mode
+#   chroma     average colourfulness (HCL C, 0-1): near-grey images get
+#              monochrome/neutral so the shell isn't more colourful than the
+#              wallpaper, very colourful ones get vibrant
+# Thresholds picked by measuring ~/Pictures/Wallpapers (Sept 2026): lightness
+# ran 0.10-0.78, chroma 0.015-0.39.
+smart_opts() {
+  local out lightness chroma
+  out="$(magick "$1[0]" -resize '64x64!' -write mpr:w +delete \
+    mpr:w -colorspace LAB -format '%[fx:mean.r] ' -write info: +delete \
+    mpr:w -colorspace HCL -format '%[fx:mean.g]' info: 2>/dev/null)" || return 1
+  read -r lightness chroma <<<"$out"
+  jq -rn --argjson l "$lightness" --argjson c "$chroma" '
+    (if $l > 0.6 then "light" else "dark" end) + " " +
+    (if $c < 0.035 then "monochrome"
+     elif $c < 0.09 then "neutral"
+     elif $c < 0.25 then "tonalspot"
+     else "vibrant" end)'
+}
+
+# smart_pick FILE: with smart on and the dynamic theme current, take mode and
+# variant from FILE. A mode the theme has no palette for is left as it is.
+smart_pick() {
+  [ "$smart" -eq 1 ] && [ "$name" = "$dynamic_theme" ] && [ -f "$1" ] || return 0
+  local opts new_mode new_variant
+  if ! opts="$(smart_opts "$1")"; then
+    printf 'theme.sh: could not analyse %s, keeping mode and variant\n' "$1" >&2
+    return 0
+  fi
+  read -r new_mode new_variant <<<"$opts"
+  if listed "$new_mode" modes "$name" "$flavour"; then mode="$new_mode"; fi
+  variant="$new_variant"
 }
 
 # --- Commands ----------------------------------------------------------------
@@ -291,7 +347,7 @@ cmd_wallpaper() {
       -f|--file) action=set file="${2:?-f needs a file}"; shift 2 ;;
       -p|--print) action=print file="${2:?-p needs a file}"; shift 2 ;;
       -r|--random) action=random; shift ;;
-      --no-smart) shift ;; # caelestia's light/dark guessing; themes set their mode
+      --no-smart) smart=0; shift ;; # only the dynamic theme is smart; curated themes set their own mode
       *) usage ;;
     esac
   done
@@ -306,6 +362,7 @@ cmd_wallpaper() {
       [ -f "$file" ] || die "$file is not a file"
       adopt_theme_of "$file"
       check_state
+      smart_pick "$file"
       jq -n --arg name "$name" --arg flavour "$flavour" --arg mode "$mode" --arg variant "$variant" \
         --argjson colours "$(gen_colours "$name" "$flavour" "$mode" "$variant" "$file")" \
         '{name: $name, flavour: $flavour, mode: $mode, variant: $variant, colours: $colours}'
@@ -314,16 +371,21 @@ cmd_wallpaper() {
       if [ "$action" = random ]; then
         # From the current theme's folder; failing that, from loose images
         # directly in the wallpaper folder, never from another theme's folder
-        # (which would switch themes)
+        # (which would switch themes). The dynamic theme takes any wallpaper.
         check_state
-        file="$(random_wallpaper "$walls_dir/$name")"
-        [ -n "$file" ] || file="$(random_wallpaper "$walls_dir" -maxdepth 1)"
+        if [ "$name" = "$dynamic_theme" ]; then
+          file="$(random_wallpaper "$walls_dir")"
+        else
+          file="$(random_wallpaper "$walls_dir/$name")"
+          [ -n "$file" ] || file="$(random_wallpaper "$walls_dir" -maxdepth 1)"
+        fi
         [ -n "$file" ] || die "no wallpapers in $walls_dir/$name or directly in $walls_dir"
       fi
       [ -f "$file" ] || die "$file is not a file"
       file="$(readlink -f "$file")"
       adopt_theme_of "$file"
       check_state
+      smart_pick "$file"
       set_wallpaper "$file"
       apply
       ;;
@@ -395,6 +457,9 @@ cmd_scheme_set() {
     flavour="$new_flavour"
   fi
   check_state
+  # Switching to the dynamic theme fits it to the wallpaper already up;
+  # an explicit -m/-v below still wins
+  if [ "$theme_changed" -eq 1 ]; then smart_pick "$(current_wall)"; fi
   if [ -n "$new_mode" ]; then
     listed "$new_mode" modes "$name" "$flavour" ||
       fail "Unable to set mode" "Theme $name $flavour has no $new_mode mode"

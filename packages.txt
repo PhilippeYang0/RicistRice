@@ -30,6 +30,7 @@ quickshell-git            # used by: dotfiles/quickshell (provides qs), scripts/
 matugen                   # used by: dotfiles/ricistrice/bin/theme.sh (colours from each theme's seed)
 jq                        # used by: dotfiles/ricistrice/bin/theme.sh, .claude/hooks/*.sh
 libnotify-bin             # used by: theme.sh --notify, the shell (notify-send), test notification keybind
+imagemagick               # used by: dotfiles/ricistrice/bin/theme.sh (magick: smart scheme reads a wallpaper's lightness/colourfulness for the dynamic theme)
 
 # caelestia-shell runtime (programs its QML runs)
 ddcutil                   # used by: the shell (external monitor brightness)
