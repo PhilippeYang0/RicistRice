@@ -12,7 +12,7 @@ colours from each theme's hand-picked palette.
 1. `scripts/bootstrap.sh` — installs the apt/PPA dependencies in
    `packages.txt` (Hyprland, quickshell-git, matugen, build deps, ...). It only
    reports `[manual]` items; install those by hand with the commands listed in
-   `packages.txt` (awww, three fonts, discord).
+   `packages.txt` (awww, three fonts, discord, spotify + SpotX-Bash).
 2. `scripts/build-shell.sh` — builds the shell's C++ QML plugin (caelestia's
    plugin, m3shapes, libcava) into `~/.local/lib/ricistrice`. No sudo.
 3. Put wallpapers in `~/Pictures/Wallpapers/<theme>/`, e.g.
@@ -78,6 +78,7 @@ caelestia's keybinds (see its README), with these differences:
 |---|---|---|
 | `Super` (tap) | launcher | replaces the old `Super+D` rofi |
 | `Super+T`, `Super+Return` | terminal (alacritty) | `Super+Return` kept from the old config |
+| `Super+M` | music workspace: opens Spotify if it isn't running | caelestia launches it through spicetify; we use plain Spotify + SpotX-Bash (ad blocking) |
 | `Super+Shift+E` | log out | works without the shell; the old `Super+M` is caelestia's music workspace now |
 | `Ctrl+Alt+Delete` | session menu (shell) | |
 | `Super+Alt+Space` | toggle floating | the old `Super+V` is clipboard history now |

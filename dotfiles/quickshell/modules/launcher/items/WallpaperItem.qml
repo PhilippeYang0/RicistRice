@@ -59,14 +59,19 @@ Item {
 
         MaterialIcon {
             anchors.centerIn: parent
-            text: "image"
+            // RicistRice: a video shows as its extracted frame, so say which
+            // ones are videos — and this is also what's up while the frame is
+            // still being extracted
+            text: Wallpapers.isVideo(root.modelData.path) ? "movie" : "image"
             color: Colours.tPalette.m3outline
             fontStyle: Tokens.font.icon.builders.extraLarge.scale(2).weight(Font.DemiBold).build()
         }
 
         CachingImage {
             anchors.fill: parent
-            path: root.modelData.path
+            // RicistRice: a video can't be loaded as an image; show the frame
+            // theme.sh extracts from it ("" until it has, leaving the icon up)
+            path: Wallpapers.stillOf(root.modelData.path)
             smooth: !root.PathView.view.moving
             sourceSize: {
                 const dpr = (QsWindow.window as QsWindow)?.devicePixelRatio ?? 1;

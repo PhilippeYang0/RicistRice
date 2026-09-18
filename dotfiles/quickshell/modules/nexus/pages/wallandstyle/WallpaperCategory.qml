@@ -40,7 +40,8 @@ PageBase {
                 opacity: modelData ? 1 : 0
                 enabled: modelData
 
-                source: String(modelData?.path ?? "")
+                // RicistRice: a video shows as its extracted frame
+                source: Wallpapers.stillOf(String(modelData?.path ?? ""))
                 text: modelData?.name ?? ""
                 onClicked: {
                     Wallpapers.setWallpaper(modelData.path);

@@ -65,9 +65,12 @@ return {
     ------------------
 
     -- Modifier only, the actual binds will be mod + 0-9. These should be strings and not arrays.
+    -- RicistRice: swapped vs caelestia, which had move-window on SUPER + ALT and
+    -- workspace groups on CTRL + SUPER. Now CTRL always means "bring the window
+    -- with you" and ALT always means "workspace group", so the four read as a grid.
     kbGoToWs                   = "SUPER",
-    kbGoToWsGroup              = "CTRL + SUPER",
-    kbMoveWinToWs              = "SUPER + ALT",
+    kbMoveWinToWs              = "CTRL + SUPER",
+    kbGoToWsGroup              = "SUPER + ALT",
     kbMoveWinToWsGroup         = "CTRL + SUPER + ALT",
 
     -- All the following binds can be either an array of binds to bind multiple keys, or a single string.
@@ -77,8 +80,13 @@ return {
     kbMoveWinFromWsSpecial     = "CTRL + SUPER + SHIFT + Down",
     kbMoveWinToWsNext          = { "SUPER + ALT + mouse_down", "SUPER + ALT + Page_Down", "CTRL + SUPER + SHIFT + Right" },
     kbMoveWinToWsPrev          = { "SUPER + ALT + mouse_up", "SUPER + ALT + Page_Up", "CTRL + SUPER + SHIFT + Left" },
-    kbNextWs                   = { "SUPER + mouse_down", "CTRL + SUPER + Right", "SUPER + Page_Down" },
-    kbPrevWs                   = { "SUPER + mouse_up", "CTRL + SUPER + Left", "SUPER + Page_Up" },
+    -- RicistRice: CTRL + SUPER + Left/Right dropped from these two, they now
+    -- move the whole workspace between monitors (kbMoveWsToMon* below).
+    kbNextWs                   = { "SUPER + mouse_down", "SUPER + Page_Down" },
+    kbPrevWs                   = { "SUPER + mouse_up", "SUPER + Page_Up" },
+    -- RicistRice: send the current workspace to the monitor on that side
+    kbMoveWsToMonLeft          = "CTRL + SUPER + Left",
+    kbMoveWsToMonRight         = "CTRL + SUPER + Right",
     kbNextWsGroup              = "CTRL + SUPER + mouse_down",
     kbPrevWsGroup              = "CTRL + SUPER + mouse_up",
 

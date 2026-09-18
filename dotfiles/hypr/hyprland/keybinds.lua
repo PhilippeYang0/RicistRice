@@ -96,6 +96,22 @@ create_bind(vars.kbNextWs, hl.dsp.focus({ workspace = "+1" }), repeating_unless_
 create_bind(vars.kbPrevWsGroup, hl.dsp.focus({ workspace = "-10" }), repeating_unless_mouse)
 create_bind(vars.kbNextWsGroup, hl.dsp.focus({ workspace = "+10" }), repeating_unless_mouse)
 
+-- Move the current workspace to the monitor on the left/right.
+-- RicistRice: not in caelestia. hl.dsp.workspace.move is Lua's
+-- moveworkspacetomonitor; the monitor is resolved by name at press time so
+-- plugging/unplugging a screen doesn't need a config change.
+local function move_ws_to_monitor(dir)
+    return function()
+        local mon = fn.monitor_in_direction(dir)
+        if mon then
+            hl.dispatch(hl.dsp.workspace.move({ monitor = mon.name }))
+        end
+    end
+end
+
+create_bind(vars.kbMoveWsToMonLeft, move_ws_to_monitor("left"))
+create_bind(vars.kbMoveWsToMonRight, move_ws_to_monitor("right"))
+
 -- Move window to workspace -1/+1
 create_bind(vars.kbMoveWinToWsNext, hl.dsp.window.move({ workspace = "+1" }), repeating_unless_mouse)
 create_bind(vars.kbMoveWinToWsPrev, hl.dsp.window.move({ workspace = "-1" }), repeating_unless_mouse)

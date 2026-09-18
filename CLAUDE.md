@@ -200,8 +200,17 @@ of our own rice. Never edit files inside `refs/`; copy the parts we want into
 - Gaps vs. caelestia, all needing its CLI or non-Ubuntu apps: screen recording
   (`services/Recorder.qml` still calls `caelestia record` + gpu-screen-recorder,
   so its UI shows a timer while nothing records), emoji picker, paste-latest,
-  todo workspace. The launcher's wallpaper hover-preview doesn't show on the
-  desktop, since awww (not the shell) draws the wallpaper
+  todo workspace
+- Browsing wallpapers in the launcher (`>wallpaper `) previews both the
+  wallpaper and the colours it would give. caelestia previewed the wallpaper by
+  drawing it itself, which awww does for us, so
+  `modules/background/WallpaperPreview.qml` lays the previewed one over awww's
+  on the shell's background window (Bottom layer, just above awww's) and fades
+  it out again; awww is never touched, so cancelling costs nothing. Colours are
+  previewed for the dynamic theme and for any pick that would switch theme,
+  debounced since each run costs a matugen (~0.7s). Not previewed: Hyprland's
+  own colours, and the nexus wallpaper page, which never previewed upstream
+  either
 - `power-profiles-daemon` is deliberately not installed (system service); the
   shell's power-profile switch does nothing without it
 - The waybar/hyprpaper leftovers are gone (removed with the Quickshell + awww

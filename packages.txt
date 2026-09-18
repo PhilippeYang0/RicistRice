@@ -31,6 +31,7 @@ matugen                   # used by: dotfiles/ricistrice/bin/theme.sh (colours f
 jq                        # used by: dotfiles/ricistrice/bin/theme.sh, .claude/hooks/*.sh
 libnotify-bin             # used by: theme.sh --notify, the shell (notify-send), test notification keybind
 imagemagick               # used by: dotfiles/ricistrice/bin/theme.sh (magick: smart scheme reads a wallpaper's lightness/colourfulness for the dynamic theme)
+ffmpeg                    # used by: dotfiles/ricistrice/bin/theme.sh (ffmpeg/ffprobe: extracts the still frame standing in for a video wallpaper — awww and matugen can't read video)
 
 # caelestia-shell runtime (programs its QML runs)
 ddcutil                   # used by: the shell (external monitor brightness)
@@ -50,6 +51,7 @@ qml6-module-qtquick-effects   # used by: the shell
 qml6-module-qtquick-layouts   # used by: the shell
 qml6-module-qtquick-shapes    # used by: the shell
 qml6-module-qtquick-templates # used by: the shell
+qml6-module-qtmultimedia  # used by: dotfiles/quickshell/modules/background/VideoWallpaper.qml (plays video wallpapers, which awww can't)
 # power-profiles-daemon is left out on purpose: the shell's power-profile
 # switch needs it, but it's a system service that changes CPU power behaviour,
 # not something to install for a rice. Install it yourself if you want that.
@@ -89,6 +91,12 @@ bluez                     # used by: hypr/hyprland/execs.lua (mpris-proxy)
 libglib2.0-bin            # used by: hypr/hyprland/execs.lua (gsettings cursor)
 nwg-displays              # used by: writes hypr/monitors.lua and workspaces.lua (GUI monitor layout)
 
+# SpotX-Bash (see [manual]) refuses to run without these
+perl                      # used by: SpotX-Bash (patches Spotify)
+zip                       # used by: SpotX-Bash
+unzip                     # used by: SpotX-Bash
+curl                      # used by: SpotX-Bash download, [manual] font installs
+
 # repo tooling
 git                       # used by: scripts/commit-push.sh, capture.sh, build-shell.sh
 rsync                     # used by: scripts/capture.sh
@@ -104,3 +112,5 @@ font:Rubik :: the shell's UI font. mkdir -p ~/.local/share/fonts && curl -L -o ~
 font:CaskaydiaCove NF :: the shell's monospace font. mkdir -p ~/.local/share/fonts/CaskaydiaCove && curl -L 'https://github.com/ryanoasis/nerd-fonts/releases/latest/download/CascadiaCode.tar.xz' | tar -xJ -C ~/.local/share/fonts/CaskaydiaCove && fc-cache
 font:JetBrainsMono NF :: Hyprland group bar font (hypr/hyprland/group.lua). Already installed here; nerd-fonts release JetBrainsMono.tar.xz, same steps as CaskaydiaCove
 discord :: .deb from discord.com (no apt repo). Used by: Super+D communication workspace (hypr/utils/functions.lua)
+spotify :: Spotify's own apt repo (not a PPA, so bootstrap.sh can't add it): curl -sS https://download.spotify.com/debian/pubkey_5384CE82BA52C83A.asc | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/spotify.gpg && echo "deb https://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list && sudo apt-get update && sudo apt-get install spotify-client. Use this .deb, not the snap: SpotX-Bash only patches the snap through a separate script. Used by: Super+M music workspace (hypr/utils/functions.lua)
+path:/usr/share/spotify/Apps/xpui.bak :: SpotX-Bash (github.com/SpotX-Official/SpotX-Bash), blocks Spotify ads by patching its files; this backup file means it has been applied. Close Spotify, then: bash <(curl -sSL https://spotx-official.github.io/run.sh). Asks for sudo (the deb lives in /usr/share/spotify). Re-run after every spotify-client upgrade: apt replaces the patched files and ads come back, but this check can't tell (the backup file survives the upgrade)

@@ -65,8 +65,9 @@ Item {
             const currentItem = list.currentList?.currentItem;
             if (currentItem) {
                 if (list.showWallpapers) {
-                    if (Colours.scheme === "dynamic" && currentItem.modelData.path !== Wallpapers.actualCurrent)
-                        Wallpapers.previewColourLock = true;
+                    // RicistRice: caelestia took the colour lock here, for its
+                    // dynamic scheme only; Wallpapers.setWallpaper takes it for
+                    // any theme now, so clicking an item holds the colours too
                     Wallpapers.setWallpaper(currentItem.modelData.path);
                     root.screenState.launcher = false;
                 } else if (text.startsWith(GlobalConfig.launcher.actionPrefix)) {

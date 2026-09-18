@@ -16,6 +16,33 @@ local function wsaction(action, range, i)
     end
 end
 
+-- RicistRice: not in caelestia (it has no monitor binds at all).
+-- The nearest monitor left/right of the focused one, picked by x position so it
+-- follows the real physical layout in monitors.lua rather than hardcoded names.
+-- Returns nil when there's nothing that way, so a bind is a no-op at the edge.
+local function monitor_in_direction(dir)
+    local current = hl.get_active_monitor()
+    if not current then return nil end
+
+    local best
+    for _, m in ipairs(hl.get_monitors()) do
+        -- Written out rather than as an `and`/`or` ternary: that form breaks
+        -- when the condition is false (it falls through to the other branch).
+        local beyond
+        if dir == "left" then
+            beyond = m.x < current.x
+        else
+            beyond = m.x > current.x
+        end
+
+        if beyond and (not best or math.abs(m.x - current.x) < math.abs(best.x - current.x)) then
+            best = m
+        end
+    end
+
+    return best
+end
+
 local function resize_by_screen(x, y)
     local screen = hl.get_active_monitor()
     if screen and type(screen.width) == "number" and type(screen.height) == "number" then
@@ -100,11 +127,13 @@ local function toggle_config()
             whatsapp = { enable = true, match = { { class = "whatsapp" } }, move = true },
         },
         music = {
-            -- No command: Spotify isn't installed, but it's gathered here when it runs
+            -- caelestia launches `spicetify watch -s` (its Spotify theme); we run
+            -- plain Spotify, ad-blocked by SpotX-Bash instead (packages.txt)
             spotify = {
-                enable = true,
-                match  = { { class = "Spotify" }, { initial_title = "Spotify" }, { initial_title = "Spotify Free" } },
-                move   = true,
+                enable  = true,
+                match   = { { class = "Spotify" }, { initial_title = "Spotify" }, { initial_title = "Spotify Free" } },
+                command = { "spotify" },
+                move    = true,
             },
             feishin = { enable = true, match = { { class = "feishin" } }, move = true },
         },
@@ -235,6 +264,7 @@ local function toggle(special_workspace)
 end
 
 return {
+    monitor_in_direction = monitor_in_direction,
     resizer              = resizer,
     resize_by_screen     = resize_by_screen,
     resize_active_window = resize_active_window,

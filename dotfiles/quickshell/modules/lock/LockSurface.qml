@@ -188,7 +188,10 @@ WlSessionLockSurface {
         id: wallpaperBackground
 
         CachingImage {
-            path: Wallpapers.current
+            // RicistRice: the lock screen doesn't play video wallpapers (it
+            // covers the desktop, and a lock screen is not the place to start
+            // a decoder), so it shows the frame theme.sh extracted instead
+            path: Wallpapers.stillOf(Wallpapers.current)
         }
     }
 

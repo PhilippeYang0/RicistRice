@@ -38,6 +38,12 @@ fi
 # config error that this deploy fixes), start it. -n: never start a second copy.
 if pgrep -x quickshell >/dev/null || pgrep -x qs >/dev/null; then
   qs kill >/dev/null
+  # qs kill only asks the shell to quit. Wait (up to 5s) until it's gone, or
+  # -n sees the exiting copy as still running and starts nothing
+  for _ in $(seq 50); do
+    pgrep -x quickshell >/dev/null || pgrep -x qs >/dev/null || break
+    sleep 0.1
+  done
   qs -n -d >/dev/null
   say restart "quickshell"
 elif [ -f "$config_dir/quickshell/shell.qml" ]; then

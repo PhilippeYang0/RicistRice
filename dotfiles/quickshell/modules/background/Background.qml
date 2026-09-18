@@ -50,6 +50,53 @@ Variants {
                 sourceComponent: Wallpaper {}
             }
 
+            // RicistRice: awww draws the wallpaper for us, so the launcher's
+            // preview needs a layer of its own (see WallpaperPreview.qml).
+            // With the shell drawing it, the Wallpaper above previews by
+            // itself — Wallpapers.current is the previewed path meanwhile.
+            // RicistRice: awww can't play video, so a video wallpaper is
+            // played here over awww's still of it. Only loaded while the
+            // wallpaper actually is one — no MediaPlayer exists otherwise.
+            // Declared before the preview below so the preview paints over it:
+            // browsing away from a playing video has to cover it, not sit
+            // under it. It follows actualCurrent, not current, for the same
+            // reason — the video carries on playing behind a preview and is
+            // still there when the preview is cancelled.
+            // Loaded by file name rather than as a `sourceComponent:
+            // VideoWallpaper {}`: naming the type resolves it when this file
+            // compiles, even with active false, so a missing QtMultimedia
+            // (qml6-module-qtmultimedia, see packages.txt) took the whole
+            // config down with it — a black desktop and no shell at all.
+            // Loading it by source keeps that failure inside this Loader.
+            Loader {
+                id: video
+
+                asynchronous: true
+
+                anchors.fill: parent
+                active: !Config.background.wallpaperEnabled && Wallpapers.isVideo(Wallpapers.actualCurrent)
+                source: "VideoWallpaper.qml"
+
+                // Can't be set in a binding above, since the component isn't
+                // named here; a video wallpaper replacing another one changes
+                // the path while this stays loaded
+                Binding {
+                    target: video.item
+                    property: "path"
+                    value: Wallpapers.actualCurrent
+                    when: video.status === Loader.Ready
+                }
+            }
+
+            Loader {
+                asynchronous: true
+
+                anchors.fill: parent
+                active: !Config.background.wallpaperEnabled
+
+                sourceComponent: WallpaperPreview {}
+            }
+
             Visualiser {
                 anchors.fill: parent
                 screen: win.modelData

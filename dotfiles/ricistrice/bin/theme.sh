@@ -47,6 +47,9 @@ usage:
   theme.sh wallpaper -r              random wallpaper from the current theme's folder
   theme.sh wallpaper -p FILE         print the colours FILE would give, change nothing
                                      (the wallpaper commands also take --no-smart)
+  theme.sh thumb FILE                print an image standing in for FILE: FILE
+                                     itself, or a frame extracted from it (and
+                                     cached) when FILE is a video
   theme.sh scheme list               every theme and its colours, as JSON
   theme.sh scheme get [-nfmv]        print name, flavour, mode and/or variant
   theme.sh scheme set [-n NAME] [-f FLAVOUR] [-m MODE] [-v VARIANT] [--notify]
@@ -237,7 +240,7 @@ random_wallpaper() {
   [ -d "$dir" ] || return 0
   current="$(current_wall)"
   local -a walls
-  mapfile -t walls < <(find "$dir" "$@" -type f -iregex '.*\.\(png\|jpe?g\|webp\|gif\|bmp\)' | shuf)
+  mapfile -t walls < <(find "$dir" "$@" -type f -iregex '.*\.\(png\|jpe?g\|webp\|gif\|bmp\|mp4\|webm\|mkv\)' | shuf)
   for w in "${walls[@]}"; do
     if [ "$w" != "$current" ]; then
       printf '%s\n' "$w"
@@ -247,14 +250,79 @@ random_wallpaper() {
   if [ ${#walls[@]} -gt 0 ]; then printf '%s\n' "${walls[0]}"; fi
 }
 
+# --- Video wallpapers --------------------------------------------------------
+# awww draws images and GIFs only, and neither matugen nor ImageMagick can read
+# a video at all. So everywhere but playback itself, a video wallpaper is
+# represented by one frame extracted from it: awww puts that still up, and the
+# colours are generated from it. The shell plays the video on its background
+# window, one layer above awww, so the still is what shows while the video
+# loads and whenever playback is paused (see modules/background/VideoWallpaper.qml).
+# The shell asks for the same frame with `theme.sh thumb`.
+video_exts=(mp4 webm mkv)
+thumbs_dir="${XDG_CACHE_HOME:-$HOME/.cache}/ricistrice/videothumbs"
+
+is_video() {
+  local ext="${1##*.}"
+  contains "${ext,,}" "${video_exts[@]}"
+}
+
+# extract_still VIDEO OUT: one frame of VIDEO into OUT. Seeks 30% in, capped at
+# 4s, so the frame isn't a fade-in from black and a long video stays quick.
+extract_still() {
+  local duration seek tmp
+  duration="$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$1" 2>/dev/null)" || duration=""
+  seek=0.1
+  if [[ "$duration" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+    seek="$(jq -rn --argjson d "$duration" 'if $d > 1 then [$d * 0.3, 4] | min else 0.1 end')"
+  fi
+  mkdir -p "$(dirname "$2")"
+  tmp="$(mktemp "$2.XXXXXX")"
+  if ffmpeg -y -v error -ss "$seek" -i "$1" -frames:v 1 -q:v 2 -update 1 -f image2 "$tmp" \
+       </dev/null >/dev/null 2>&1 && [ -s "$tmp" ]; then
+    mv "$tmp" "$2"
+    return 0
+  fi
+  rm -f "$tmp"
+  printf 'theme.sh: could not extract a frame from %s (is ffmpeg installed?)\n' "$1" >&2
+  return 1
+}
+
+# still_of FILE: an image standing in for FILE — FILE itself when it is one,
+# otherwise a frame extracted from the video, cached and regenerated whenever
+# the video is newer than the frame. Prints nothing for an empty FILE or when
+# extraction fails, which leaves callers with the same "no wallpaper" path they
+# already handle.
+still_of() {
+  [ -n "${1:-}" ] || return 0
+  if ! is_video "$1"; then
+    printf '%s\n' "$1"
+    return 0
+  fi
+  local video thumb
+  # Resolved, so the same video reached by different paths is cached once
+  video="$(readlink -f "$1")" || return 0
+  thumb="$thumbs_dir/$(printf '%s' "$video" | md5sum | cut -d' ' -f1).jpg"
+  if [ ! -f "$thumb" ] || [ "$video" -nt "$thumb" ]; then
+    extract_still "$video" "$thumb" || return 0
+  fi
+  printf '%s\n' "$thumb"
+}
+
 # Draw FILE with awww, using the current palette's filter and transition, and
 # remember it for the shell. awww failing (daemon not up yet) isn't fatal:
 # `restore` puts the wallpaper back once it is.
 set_wallpaper() {
   read_palette "$name" "$flavour" "$mode"
-  awww img "$1" --filter "${settings[filter]:-Lanczos3}" \
-    --transition-type "${settings[transition]:-simple}" --transition-fps 60 ||
-    printf 'theme.sh: awww img failed (is awww-daemon running?)\n' >&2
+  # A video's still: awww holds it under the shell's playback (see still_of)
+  local drawn
+  drawn="$(still_of "$1")"
+  if [ -n "$drawn" ]; then
+    awww img "$drawn" --filter "${settings[filter]:-Lanczos3}" \
+      --transition-type "${settings[transition]:-simple}" --transition-fps 60 ||
+      printf 'theme.sh: awww img failed (is awww-daemon running?)\n' >&2
+  fi
+  # The video itself, not its still: this is what the shell plays and what
+  # names the wallpaper everywhere else
   printf '%s\n' "$1" | atomic_write "$wall_file"
 }
 
@@ -262,7 +330,7 @@ set_wallpaper() {
 # Hyprland is only reloaded when its colours actually changed.
 apply() {
   local colours hypr
-  colours="$(gen_colours "$name" "$flavour" "$mode" "$variant" "$(current_wall)")"
+  colours="$(gen_colours "$name" "$flavour" "$mode" "$variant" "$(still_of "$(current_wall)")")"
 
   jq -n --arg name "$name" --arg flavour "$flavour" --arg mode "$mode" --arg variant "$variant" \
     --argjson colours "$colours" \
@@ -327,11 +395,14 @@ smart_opts() {
 
 # smart_pick FILE: with smart on and the dynamic theme current, take mode and
 # variant from FILE. A mode the theme has no palette for is left as it is.
+# A video is measured through its still, like every other image-only step.
 smart_pick() {
-  [ "$smart" -eq 1 ] && [ "$name" = "$dynamic_theme" ] && [ -f "$1" ] || return 0
-  local opts new_mode new_variant
-  if ! opts="$(smart_opts "$1")"; then
-    printf 'theme.sh: could not analyse %s, keeping mode and variant\n' "$1" >&2
+  [ "$smart" -eq 1 ] && [ "$name" = "$dynamic_theme" ] || return 0
+  local img opts new_mode new_variant
+  img="$(still_of "${1:-}")"
+  [ -n "$img" ] && [ -f "$img" ] || return 0
+  if ! opts="$(smart_opts "$img")"; then
+    printf 'theme.sh: could not analyse %s, keeping mode and variant\n' "$img" >&2
     return 0
   fi
   read -r new_mode new_variant <<<"$opts"
@@ -364,7 +435,7 @@ cmd_wallpaper() {
       check_state
       smart_pick "$file"
       jq -n --arg name "$name" --arg flavour "$flavour" --arg mode "$mode" --arg variant "$variant" \
-        --argjson colours "$(gen_colours "$name" "$flavour" "$mode" "$variant" "$file")" \
+        --argjson colours "$(gen_colours "$name" "$flavour" "$mode" "$variant" "$(still_of "$file")")" \
         '{name: $name, flavour: $flavour, mode: $mode, variant: $variant, colours: $colours}'
       ;;
     set | random)
@@ -395,7 +466,7 @@ cmd_wallpaper() {
 cmd_scheme_list() {
   load_state
   local wall theme flav m colours
-  wall="$(current_wall)"
+  wall="$(still_of "$(current_wall)")"
   while read -r theme; do
     while read -r flav; do
       # Preview each palette in the current mode when it has one
@@ -480,6 +551,15 @@ cmd_scheme_set() {
   apply
 }
 
+# The shell calls this for a video's still, rather than working out where the
+# cache put it, so still_of stays the only thing that knows (services/Wallpapers.qml)
+cmd_thumb() {
+  local file="${1:-}"
+  [ -n "$file" ] || usage
+  [ -f "$file" ] || die "$file is not a file"
+  still_of "$file"
+}
+
 cmd_restore() {
   local wall
   # awww-daemon starts alongside this at login; give it up to 5s
@@ -506,6 +586,7 @@ case "${1:-}" in
       *) usage ;;
     esac
     ;;
+  thumb) shift; cmd_thumb "$@" ;;
   restore) cmd_restore ;;
   *) usage ;;
 esac
