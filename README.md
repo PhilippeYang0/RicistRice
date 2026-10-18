@@ -77,7 +77,7 @@ caelestia's keybinds (see its README), with these differences:
 | Keys | Does | Note |
 |---|---|---|
 | `Super` (tap) | launcher | replaces the old `Super+D` rofi |
-| `Super+T`, `Super+Return` | terminal (alacritty) | `Super+Return` kept from the old config |
+| `Super+T`, `Super+Return` | terminal (kitty) | `Super+Return` kept from the old config |
 | `Super+M` | music workspace: opens Spotify if it isn't running | caelestia launches it through spicetify; we use plain Spotify + SpotX-Bash (ad blocking) |
 | `Super+Shift+E` | log out | works without the shell; the old `Super+M` is caelestia's music workspace now |
 | `Ctrl+Alt+Delete` | session menu (shell) | |

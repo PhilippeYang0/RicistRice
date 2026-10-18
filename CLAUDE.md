@@ -36,6 +36,7 @@ bug, and a stale-dependency build failure). Going manual/hand-adapted means:
 | Wallpaper daemon | `awww` | successor to `swww`, which is now archived/unmaintained. Kept over caelestia-shell's own wallpaper layer (turned off in `shell.json`): awww plays GIFs and has a `Nearest` filter for pixel art |
 | Color/theme | `matugen` as the per-theme accent generator; curated palettes per theme, not a single global wallpaper-derived scheme | from the same `avengemedia/danklinux` PPA. pywal is a lighter alternative if matugen output looks off. Driven by our `dotfiles/ricistrice/bin/theme.sh`, which stands in for the caelestia CLI's `wallpaper`/`scheme` commands. The caelestia CLI was deliberately not used: it only lists palettes bundled inside its Python package (no per-theme palettes of our own) and writes colours into `~/.config/hypr` (constant deploy drift) |
 | Display manager | LightDM | already confirmed working, no change needed |
+| Terminal | kitty, with zsh + oh-my-zsh (plugins only) + starship prompt + fastfetch greeting | replaced Alacritty (no image support, few options) and the installer's pokemon-colorscripts greeting. Chosen as the most flexible/customisable option and for the kitty graphics protocol, which lets fastfetch show a real image logo (`dotfiles/ricistrice/bin/fetch.sh`: `~/Pictures/Logos/<theme>.*`, else `default.*`). See-through (`background_opacity`) with Hyprland's blur behind it; kitty is tagged `opaque` in `hypr/hyprland/rules.lua` so Hyprland doesn't fade it twice. Colours follow the theme: `theme.sh` adds `term0`–`term15` to scheme.json (six ANSI hues blended toward the seed by matugen, `dotfiles/ricistrice/term-colours.toml`; greys from the theme's surfaces) and writes `~/.local/state/ricistrice/kitty-colours.conf`, which `kitty.conf` includes; SIGUSR1 makes open kitty windows reload it |
 | NVIDIA driver | 595.91.07 (already installed) | exceeds the 555+ target for Hyprland/Wayland |
 
 **Aesthetic direction: multi-theme, browsable at runtime**, not a single fixed
@@ -73,7 +74,11 @@ measured lightness/colourfulness (`smart_opts` in `theme.sh`, via ImageMagick).
 │   ├── hypr/              #   → ~/.config/hypr (Lua; tweak variables.lua)
 │   ├── quickshell/        #   → ~/.config/quickshell (caelestia-shell QML, Quickshell's default config)
 │   ├── caelestia/         #   → ~/.config/caelestia (the shell's shell.json overrides)
-│   ├── ricistrice/        #   → ~/.config/ricistrice (bin/theme.sh + themes/ palettes)
+│   ├── ricistrice/        #   → ~/.config/ricistrice (bin/theme.sh, bin/fetch.sh, themes/ palettes, term-colours.toml)
+│   ├── kitty/             #   → ~/.config/kitty (terminal; includes the theme's kitty-colours.conf)
+│   ├── zsh/               #   → ~/.config/zsh (zshrc; ~/.zshrc only sources it, since deploy can't reach ~)
+│   ├── starship/          #   → ~/.config/starship (prompt; zshrc points STARSHIP_CONFIG here)
+│   ├── fastfetch/         #   → ~/.config/fastfetch (greeting layout; the logo is added by fetch.sh)
 │   └── ...                #   (more if/as added)
 ├── refs/                  # untouched reference clones — read/copy from, don't edit
 ├── scripts/               # one job per script, all runnable directly
@@ -215,5 +220,13 @@ of our own rice. Never edit files inside `refs/`; copy the parts we want into
   shell's power-profile switch does nothing without it
 - The waybar/hyprpaper leftovers are gone (removed with the Quickshell + awww
   takeover). The live `~/.config/waybar` still exists, since deploy never deletes
+- **Terminal setup is written but not deployed yet.** To go live: `scripts/bootstrap.sh`
+  (installs `starship`), deploy `kitty zsh starship fastfetch ricistrice caelestia hypr`,
+  replace `~/.zshrc` with the single line `source ~/.config/zsh/zshrc` (the old
+  one is the JaKooLit installer's, pokemon greeting included), then run
+  `~/.config/ricistrice/bin/theme.sh restore` once so `kitty-colours.conf` exists. The logo box
+  (18 rows × 26 cols, aspect kept, in `fetch.sh`) hasn't been seen on the real
+  screen yet. The current logo (`~/Pictures/Logos/default.webp`) is a tall
+  full-body image, so it may need cropping to read well at that size
 - No automated QML check yet — `check.sh` covers shell scripts and Hyprland
   only. Quickshell is installed now, so this is unblocked

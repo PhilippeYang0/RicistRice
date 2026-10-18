@@ -1,0 +1,18 @@
+# matugen config read by bin/theme.sh: the six ANSI hues for terminals.
+#
+# blend = true shifts each hue a little toward the theme's seed colour, so red
+# stays red but leans warm on cozy-pixelated and cool on cold-winter, and
+# matugen gives each one at Material tones readable on the theme's surfaces.
+# theme.sh turns them into term0-term15 (see ansi_colours there); a palette
+# .conf can still pin any termN by hand. matugen requires [templates], and
+# theme.sh runs it with --dry-run, so nothing is ever written from here.
+
+[config.custom_colors]
+red     = { color = "#e64553", blend = true }
+green   = { color = "#40a02b", blend = true }
+yellow  = { color = "#df8e1d", blend = true }
+blue    = { color = "#1e66f5", blend = true }
+magenta = { color = "#ea76cb", blend = true }
+cyan    = { color = "#179299", blend = true }
+
+[templates]

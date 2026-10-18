@@ -141,7 +141,7 @@ local function toggle_config()
             btop = {
                 enable  = true,
                 match   = { { class = "btop", title = "btop", workspace = { name = "special:sysmon" } } },
-                command = { "alacritty", "--class", "btop", "--title", "btop", "-e", "btop" },
+                command = { "kitty", "--class", "btop", "--title", "btop", "btop" },
             },
         },
     }

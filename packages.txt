@@ -28,7 +28,7 @@ xdg-desktop-portal-gtk    # used by: the Hyprland session (file pickers); caeles
 # shell + theming
 quickshell-git            # used by: dotfiles/quickshell (provides qs), scripts/reload.sh, keybinds. caelestia-shell needs the git build, not tagged quickshell (the two conflict; apt swaps them)
 matugen                   # used by: dotfiles/ricistrice/bin/theme.sh (colours from each theme's seed)
-jq                        # used by: dotfiles/ricistrice/bin/theme.sh, .claude/hooks/*.sh
+jq                        # used by: dotfiles/ricistrice/bin/theme.sh, fetch.sh, .claude/hooks/*.sh
 libnotify-bin             # used by: theme.sh --notify, the shell (notify-send), test notification keybind
 imagemagick               # used by: dotfiles/ricistrice/bin/theme.sh (magick: smart scheme reads a wallpaper's lightness/colourfulness for the dynamic theme)
 ffmpeg                    # used by: dotfiles/ricistrice/bin/theme.sh (ffmpeg/ffprobe: extracts the still frame standing in for a video wallpaper — awww and matugen can't read video)
@@ -73,7 +73,6 @@ libfftw3-dev              # used by: scripts/build-shell.sh (libcava)
 libiniparser-dev          # used by: scripts/build-shell.sh (libcava)
 
 # desktop apps launched from dotfiles/hypr
-alacritty                 # used by: terminal keybinds, shell.json apps.terminal, sysmon workspace (hypr/utils/functions.lua)
 firefox                   # used by: Super+W (hypr/variables.lua browser)
 mousepad                  # used by: Super+C (hypr/variables.lua editor)
 nemo                      # used by: Super+E, shell.json apps.explorer
@@ -90,6 +89,13 @@ policykit-1-gnome         # used by: hypr/hyprland/execs.lua (polkit agent; Cinn
 bluez                     # used by: hypr/hyprland/execs.lua (mpris-proxy)
 libglib2.0-bin            # used by: hypr/hyprland/execs.lua (gsettings cursor)
 nwg-displays              # used by: writes hypr/monitors.lua and workspaces.lua (GUI monitor layout)
+
+# terminal + shell (dotfiles/kitty, zsh, starship, fastfetch)
+kitty                     # used by: terminal keybinds (hypr/variables.lua), shell.json apps.terminal, sysmon workspace (hypr/utils/functions.lua); theme.sh reloads it
+zsh                       # used by: dotfiles/zsh/zshrc (the login shell)
+starship                  # used by: dotfiles/zsh/zshrc (prompt), dotfiles/starship
+fastfetch                 # used by: dotfiles/ricistrice/bin/fetch.sh (greeting in every new terminal), dotfiles/fastfetch
+lsd                       # used by: dotfiles/zsh/zshrc (ls aliases)
 
 # SpotX-Bash (see [manual]) refuses to run without these
 perl                      # used by: SpotX-Bash (patches Spotify)
@@ -111,6 +117,9 @@ font:Material Symbols Rounded :: the shell's icon font. mkdir -p ~/.local/share/
 font:Rubik :: the shell's UI font. mkdir -p ~/.local/share/fonts && curl -L -o ~/.local/share/fonts/Rubik.ttf 'https://github.com/google/fonts/raw/main/ofl/rubik/Rubik%5Bwght%5D.ttf' && fc-cache
 font:CaskaydiaCove NF :: the shell's monospace font. mkdir -p ~/.local/share/fonts/CaskaydiaCove && curl -L 'https://github.com/ryanoasis/nerd-fonts/releases/latest/download/CascadiaCode.tar.xz' | tar -xJ -C ~/.local/share/fonts/CaskaydiaCove && fc-cache
 font:JetBrainsMono NF :: Hyprland group bar font (hypr/hyprland/group.lua). Already installed here; nerd-fonts release JetBrainsMono.tar.xz, same steps as CaskaydiaCove
+path:~/.oh-my-zsh/oh-my-zsh.sh :: oh-my-zsh, the zsh plugin framework (not an apt package). sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" --unattended --keep-zshrc. Used by: dotfiles/zsh/zshrc
+path:~/.oh-my-zsh/custom/plugins/zsh-autosuggestions :: git clone https://github.com/zsh-users/zsh-autosuggestions ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions. Used by: dotfiles/zsh/zshrc
+path:~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting :: git clone https://github.com/zsh-users/zsh-syntax-highlighting ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting. Used by: dotfiles/zsh/zshrc
 discord :: .deb from discord.com (no apt repo). Used by: Super+D communication workspace (hypr/utils/functions.lua)
 spotify :: Spotify's own apt repo (not a PPA, so bootstrap.sh can't add it): curl -sS https://download.spotify.com/debian/pubkey_5384CE82BA52C83A.asc | sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/spotify.gpg && echo "deb https://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list && sudo apt-get update && sudo apt-get install spotify-client. Use this .deb, not the snap: SpotX-Bash only patches the snap through a separate script. Used by: Super+M music workspace (hypr/utils/functions.lua)
 path:/usr/share/spotify/Apps/xpui.bak :: SpotX-Bash (github.com/SpotX-Official/SpotX-Bash), blocks Spotify ads by patching its files; this backup file means it has been applied. Close Spotify, then: bash <(curl -sSL https://spotx-official.github.io/run.sh). Asks for sudo (the deb lives in /usr/share/spotify). Re-run after every spotify-client upgrade: apt replaces the patched files and ads come back, but this check can't tell (the backup file survives the upgrade)

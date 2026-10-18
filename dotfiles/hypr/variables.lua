@@ -8,15 +8,24 @@ return {
     ------------------
 
     -- Apps (caelestia defaults foot/codium/thunar/pwvucontrol aren't installed here)
-    terminal                   = "alacritty",
+    terminal                   = "kitty",
     browser                    = "firefox",
     editor                     = "mousepad",
     fileExplorer               = "nemo",
     audioSettings              = "pavucontrol",
 
-    -- Keyboard. Hyprland has been running "us" (its default); Cinnamon uses "fr".
+    -- Keyboard. Two layouts: US QWERTY is the default, French AZERTY second.
+    -- Left Alt + Left Shift and Right Alt + Right Shift switch between them,
+    -- by side: _bidir means left goes to the previous layout and right to the
+    -- next one. (Stock xkb has no option with the sides the other way round;
+    -- with only two layouts both directions land on the same layout anyway.)
+    -- It's an xkb option, not a Hyprland keybind, so it also works on the lock
+    -- screen. AltGr + Shift is deliberately not a switch: AZERTY needs AltGr.
+    -- Cinnamon uses "fr" on its own.
     -- Workspace binds use keycodes, so they work with either layout.
-    kbLayout                   = "us",
+    kbLayout                   = "us,fr",
+    kbVariant                  = ",",
+    kbOptions                  = "grp:alt_shift_toggle_bidir",
 
     -- Touchpad
     touchpadDisableTyping      = true,
@@ -66,10 +75,11 @@ return {
 
     -- Modifier only, the actual binds will be mod + 0-9. These should be strings and not arrays.
     -- RicistRice: swapped vs caelestia, which had move-window on SUPER + ALT and
-    -- workspace groups on CTRL + SUPER. Now CTRL always means "bring the window
-    -- with you" and ALT always means "workspace group", so the four read as a grid.
+    -- workspace groups on CTRL + SUPER. Now "bring the window with you" is the
+    -- added modifier (SHIFT for a plain workspace, CTRL for a workspace group)
+    -- and ALT always means "workspace group", so the four read as a grid.
     kbGoToWs                   = "SUPER",
-    kbMoveWinToWs              = "CTRL + SUPER",
+    kbMoveWinToWs              = "SUPER + SHIFT",
     kbGoToWsGroup              = "SUPER + ALT",
     kbMoveWinToWsGroup         = "CTRL + SUPER + ALT",
 
@@ -115,12 +125,15 @@ return {
     kbWindowBorderedFullscreen = "SUPER + ALT + F",
     kbToggleWindowFloating     = "SUPER + ALT + Space",
     kbCloseWindow              = "SUPER + Q",
+    kbForceKillWindow          = "SUPER + SHIFT + Q",  -- RicistRice: SIGKILL the focused window (hung app)
+    kbKillPickWindow           = "CTRL + SUPER + Q",   -- RicistRice: click any window to SIGKILL it
 
     -- Special workspaces toggles
     kbSpecialWs                = "SUPER + S",
     kbSystemMonitorWs          = "CTRL + SHIFT + Escape",
     kbMusicWs                  = "SUPER + M",
     kbCommunicationWs          = "SUPER + D",
+    kbIdleWs                   = "SUPER + I", -- RicistRice: idle games (not in caelestia)
     -- (caelestia's Super+R todo workspace dropped: it launches todoist)
 
     -- Apps (Super+Return kept from the old hyprland.conf)

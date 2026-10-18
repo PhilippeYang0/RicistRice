@@ -89,8 +89,16 @@ Singleton {
         return monitors.values.map(e => e.name);
     }
 
+    // RicistRice: caelestia called Hyprland.monitorFor(screen). That's a C++
+    // lookup, so a binding like `monitor: Hypr.monitorFor(screen)` never re-runs
+    // when Hyprland's monitor list changes. When a monitor reconnects (wake from
+    // sleep, input switch), its screen comes back before Quickshell knows the
+    // Hyprland monitor, the lookup returns null and stays null: the bar's
+    // workspaces break and ContentWindow's dragMaskPadding stays at full size,
+    // eating clicks near that screen's edges. Reading `monitors.values` here
+    // makes every caller's binding re-run once the monitor shows up.
     function monitorFor(screen: ShellScreen): HyprlandMonitor {
-        return Hyprland.monitorFor(screen);
+        return Hyprland.monitors.values.find(m => m.name === screen?.name) ?? null;
     }
 
     function trimWsName(name: string): string {

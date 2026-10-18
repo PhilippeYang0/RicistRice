@@ -44,18 +44,34 @@ StyledWindow {
 
     property color surfaceColour: Colours.tPalette.m3surface
 
+    // RicistRice: caelestia read the window count off the monitor's cached IPC
+    // object (`activeWorkspace.lastIpcObject.windows`). Quickshell only refreshes
+    // that cache on workspace events, so a window opened on a workspace you did
+    // not just switch to leaves it reading 0 — dragMaskPadding below then stays
+    // at its full value and silently swallows clicks near that screen's edges,
+    // with no panel sliding out to show why. The live `toplevels` list is kept
+    // up to date on window events instead; hasFullscreenOnNormalWs above already
+    // uses it.
+    readonly property bool activeWsHasWindows: (monitor?.activeWorkspace?.toplevels.values.length ?? 0) > 0
+
+    // RicistRice: caelestia's drag thresholds are flat pixel counts tuned on a
+    // 1440p screen, so on a smaller monitor the same band covers a much larger
+    // share of it. Scale to the screen's height so the grab zone stays the same
+    // proportion of every monitor; never scale past caelestia's own values.
+    readonly property real dragMaskScale: Math.min(1, (screen?.height ?? 1440) / 1440)
+
     readonly property int dragMaskPadding: {
         if (focusGrab.active || panels.popouts.isDetached)
             return 0;
 
-        if (monitor?.lastIpcObject.specialWorkspace?.name || monitor?.activeWorkspace?.lastIpcObject.windows > 0)
+        if (monitor?.lastIpcObject.specialWorkspace?.name || activeWsHasWindows)
             return 0;
 
         const thresholds = [];
         for (const panel of ["dashboard", "launcher", "session", "sidebar"])
             if (contentItem.Config[panel].enabled)
                 thresholds.push(contentItem.Config[panel].dragThreshold);
-        return Math.max(...thresholds);
+        return Math.round(Math.max(...thresholds) * dragMaskScale);
     }
 
     onHasFullscreenChanged: {

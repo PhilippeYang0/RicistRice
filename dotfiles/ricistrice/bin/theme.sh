@@ -21,18 +21,21 @@
 #   ~/.local/state/caelestia/scheme.json          the shell's colours (services/Colours.qml)
 #   ~/.local/state/caelestia/wallpaper/path.txt   the shell's wallpaper (services/Wallpapers.qml)
 #   ~/.local/state/ricistrice/hypr-colours.lua    Hyprland's colours (hypr/utils/colours.lua)
+#   ~/.local/state/ricistrice/kitty-colours.conf  the terminal's colours (kitty/kitty.conf includes it)
 #
 # usage: see usage() below, or run theme.sh with no arguments
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 themes_dir="$(dirname "$script_dir")/themes"
+term_config="$(dirname "$script_dir")/term-colours.toml"
 walls_dir="${RICISTRICE_WALLPAPERS:-$HOME/Pictures/Wallpapers}"
 
 state_home="${XDG_STATE_HOME:-$HOME/.local/state}"
 scheme_file="$state_home/caelestia/scheme.json"
 wall_file="$state_home/caelestia/wallpaper/path.txt"
 hypr_colours="$state_home/ricistrice/hypr-colours.lua"
+kitty_colours="$state_home/ricistrice/kitty-colours.conf"
 shell_config="${XDG_CONFIG_HOME:-$HOME/.config}/caelestia/shell.json"
 
 default_theme=cozy-pixelated
@@ -181,15 +184,30 @@ gen_colours() {
   pins="$(for key in "${!overrides[@]}"; do printf '%s %s\n' "$key" "${overrides[$key]}"; done |
     jq -Rn '[inputs | split(" ") | {(.[0]): .[1]}] | add // {}')"
 
-  matugen "${source[@]}" -m "$mode" -t "$type" --json hex --dry-run </dev/null |
+  # term-colours.toml adds six harmonized ANSI hues (red, on_red_container,
+  # ...) to matugen's output; they become term0-term15 and are dropped as
+  # roles of their own. Normal colours are the hue's main tone, bright ones
+  # its on-container tone (lighter in dark mode, darker in light mode); the
+  # greys come from the theme's surfaces so they match its tint.
+  matugen "${source[@]}" -c "$term_config" -m "$mode" -t "$type" --json hex --dry-run </dev/null |
     jq -c --arg mode "$mode" --argjson success "$(success_colours "$mode")" --argjson pins "$pins" '
       def camel: gsub("_(?<c>[a-z])"; .c | ascii_upcase);
-      (.colors | with_entries(.key |= camel | .value |= (.[$mode].color | ltrimstr("#"))))
+      def hex($k): .colors[$k][$mode].color | ltrimstr("#");
+      ["red", "green", "yellow", "blue", "magenta", "cyan"] as $hues
+      | (if $mode == "light"
+         then [hex("on_surface"), hex("outline_variant"), hex("outline"), hex("on_surface_variant")]
+         else [hex("surface_container_highest"), hex("on_surface_variant"), hex("outline"), hex("on_surface")]
+         end) as $greys
+      | ([$greys[0]] + [$hues[] as $h | hex($h)] + [$greys[1], $greys[2]]
+         + [$hues[] as $h | hex("on_\($h)_container")] + [$greys[3]]) as $ansi
+      | .colors |= with_entries(select(.key | test("^(on_)?(red|green|yellow|blue|magenta|cyan)(_container|_source|_value)?$") | not))
+      | ([range(16)] | map({key: "term\(.)", value: $ansi[.]}) | from_entries) as $term
+      | (.colors | with_entries(.key |= camel | .value |= (.[$mode].color | ltrimstr("#"))))
       + (.palettes | with_entries(
           select(.key | IN("primary", "secondary", "tertiary", "neutral", "neutral_variant"))
           | .key += "_paletteKeyColor"
           | .value |= (.["50"].color | ltrimstr("#"))))
-      + $success + $pins'
+      + $success + $term + $pins'
 }
 
 # --- State -------------------------------------------------------------------
@@ -348,6 +366,42 @@ apply() {
        hyprctl systeminfo 2>/dev/null | grep -x 'configProvider: lua' >/dev/null; then
       hyprctl reload >/dev/null
     fi
+  fi
+
+  apply_kitty "$colours"
+}
+
+# Write kitty's colours (term0-15 are ANSI color0-15) and, when they changed,
+# send SIGUSR1 to every running kitty: that makes kitty reload its config,
+# which includes this file, so open windows recolour in place.
+apply_kitty() {
+  local conf
+  conf="$(jq -r '
+    def c($k): "#" + .[$k];
+    "# Written by ricistrice theme.sh from the current theme; do not edit.",
+    "foreground \(c("onSurface"))",
+    "background \(c("surface"))",
+    "selection_foreground \(c("onSecondaryContainer"))",
+    "selection_background \(c("secondaryContainer"))",
+    "cursor \(c("secondary"))",
+    "cursor_text_color \(c("onSecondary"))",
+    "cursor_trail_color \(c("primary"))",
+    "url_color \(c("tertiary"))",
+    "active_border_color \(c("primary"))",
+    "inactive_border_color \(c("outlineVariant"))",
+    "bell_border_color \(c("error"))",
+    "tab_bar_background \(c("surface"))",
+    "active_tab_foreground \(c("onPrimary"))",
+    "active_tab_background \(c("primary"))",
+    "inactive_tab_foreground \(c("onSurfaceVariant"))",
+    "inactive_tab_background \(c("surfaceContainer"))",
+    "mark1_background \(c("primary"))",
+    "mark2_background \(c("secondary"))",
+    "mark3_background \(c("tertiary"))",
+    (range(16) as $i | "color\($i) \(c("term\($i)"))")' <<<"$1")"
+  if [ ! -f "$kitty_colours" ] || [ "$(cat "$kitty_colours")" != "$conf" ]; then
+    printf '%s\n' "$conf" | atomic_write "$kitty_colours"
+    pkill -USR1 -x kitty 2>/dev/null || true
   fi
 }
 

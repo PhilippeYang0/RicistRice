@@ -4,7 +4,7 @@
     },
     "general": {
         "apps": {
-            "terminal": ["alacritty", "-e"],
+            "terminal": ["kitty"],
             "audio": ["pavucontrol"],
             "playback": ["mpv"],
             "explorer": ["nemo"]

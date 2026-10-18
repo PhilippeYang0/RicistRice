@@ -1,0 +1,52 @@
+# RicistRice prompt (starship: https://starship.rs/config/).
+# Colours are ANSI names (red, bright-black, ...), so the prompt follows the
+# theme's terminal colours that theme.sh writes for kitty.
+#
+#   ✿ ~/projects/RicistRice  on  main [!2]  took 3s
+#   ♡ ❯
+
+add_newline = true
+
+format = """
+[✿](bold magenta) $directory$git_branch$git_state$git_status$python$nodejs$rust$cmd_duration
+$character"""
+
+[character]
+success_symbol = "[♡ ❯](bold magenta)"
+error_symbol   = "[♡ ❯](bold red)"
+vimcmd_symbol  = "[♡ ❮](bold green)"
+
+[directory]
+style             = "bold blue"
+truncation_length = 4
+truncate_to_repo  = false
+read_only         = " 󰌾"
+
+[git_branch]
+format = "[on](bright-black) [$symbol$branch]($style) "
+symbol = " "
+style  = "bold cyan"
+
+[git_status]
+format = "([\\[$all_status$ahead_behind\\]]($style) )"
+style  = "yellow"
+
+[git_state]
+style = "bold yellow"
+
+[cmd_duration]
+min_time = 2000
+format   = "[took](bright-black) [$duration]($style)"
+style    = "yellow"
+
+[python]
+format = "[via](bright-black) [$symbol$version]($style) "
+symbol = " "
+
+[nodejs]
+format = "[via](bright-black) [$symbol$version]($style) "
+symbol = " "
+
+[rust]
+format = "[via](bright-black) [$symbol$version]($style) "
+symbol = " "

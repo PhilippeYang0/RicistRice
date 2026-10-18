@@ -164,12 +164,17 @@ create_bind(vars.kbWindowFullscreen, hl.dsp.window.fullscreen({ mode = "fullscre
 create_bind(vars.kbWindowBorderedFullscreen, hl.dsp.window.fullscreen({ mode = "maximized" }))
 create_bind(vars.kbToggleWindowFloating, hl.dsp.window.float())
 create_bind(vars.kbCloseWindow, hl.dsp.window.close())
+-- RicistRice: for when Super+Q can't close a hung app (force-kill.sh: SIGKILL
+-- the focused window's process tree; `hyprctl kill`: click a window to kill it)
+create_bind(vars.kbForceKillWindow, hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/ricistrice/bin/force-kill.sh"))
+create_bind(vars.kbKillPickWindow, hl.dsp.exec_cmd("hyprctl kill"))
 
 -- Special workspace toggles
 create_bind(vars.kbSpecialWs, fn.toggle("specialws"))
 create_bind(vars.kbSystemMonitorWs, fn.toggle("sysmon"))
 create_bind(vars.kbMusicWs, fn.toggle("music"))
 create_bind(vars.kbCommunicationWs, fn.toggle("communication"))
+create_bind(vars.kbIdleWs, fn.toggle("idle")) -- RicistRice: idle games workspace
 
 -- Apps
 create_bind(vars.kbTerminal, hl.dsp.exec_cmd(vars.terminal))

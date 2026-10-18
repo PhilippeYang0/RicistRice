@@ -33,6 +33,7 @@ local system_monitor_tag = "system_monitor"
 local music_player_tag = "music_player"
 local communication_app_tag = "communication_app"
 local todo_app_tag = "todo_app"
+local idle_game_tag = "idle_game"
 
 
 ----------------------
@@ -61,7 +62,7 @@ hl.window_rule({
 
 -- Opaque apps
 tagged_rule(opaque_tag, {
-    "Alacritty",                     -- Terminal
+    "kitty",                         -- Terminal (does its own see-through background; see kitty.conf)
     "equibop",                       -- Discord client
     "org.quickshell",                -- Quickshell
     "feh|imv|swappy",                -- Image viewers
@@ -149,6 +150,11 @@ tagged_rule(communication_app_tag, {
 tagged_rule(todo_app_tag, {
     "todoist" -- Todoist
 }, "class")
+-- RicistRice: idle games, not in caelestia. Add a game's Steam class here
+-- (find it with `hyprctl clients`)
+tagged_rule(idle_game_tag, {
+    "steam_app_1147690", -- NGU Idle
+}, "class")
 
 
 -----------------------
@@ -194,6 +200,11 @@ create_tag(system_monitor_tag, { workspace = "special:sysmon" })
 create_tag(music_player_tag, { workspace = "special:music" })
 create_tag(communication_app_tag, { workspace = "special:communication" })
 create_tag(todo_app_tag, { workspace = "special:todo" })
+-- RicistRice: a hidden window gets no frame callbacks, and Unity games run their
+-- logic in the vsync-blocked frame loop, so they freeze. render_unfocused keeps
+-- them drawing at misc:render_unfocused_fps (15). idle_inhibit "none" overrides
+-- the game tag's "always", so an idle game left running lets the screen sleep
+create_tag(idle_game_tag, { workspace = "special:idle", render_unfocused = true, idle_inhibit = "none" })
 
 
 -------------------------
