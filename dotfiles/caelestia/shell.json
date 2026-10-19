@@ -8,6 +8,13 @@
             "audio": ["pavucontrol"],
             "playback": ["mpv"],
             "explorer": ["nemo"]
+        },
+        "idle": {
+            "timeouts": [
+                { "timeout": 180, "idleAction": "lock", "enabled": false },
+                { "timeout": 300, "idleAction": "dpms off", "returnAction": "dpms on", "enabled": false },
+                { "timeout": 600, "idleAction": ["suspendThenHibernate"], "enabled": false }
+            ]
         }
     },
     "paths": {

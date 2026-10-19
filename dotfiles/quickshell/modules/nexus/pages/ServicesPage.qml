@@ -81,6 +81,20 @@ PageBase {
             onClicked: root.nState.openSubPage(1)
         }
 
+        // RicistRice: idle timeouts, not in caelestia
+        SectionHeader {
+            text: Tr.tr("Power")
+        }
+
+        NavRow {
+            first: true
+            last: true
+            icon: "bedtime"
+            text: Tr.tr("Idle & power")
+            subtext: Tr.tr("Lock, screen off and suspend timeouts")
+            onClicked: root.nState.openSubPage(2)
+        }
+
         // Polling
         SectionHeader {
             text: Tr.tr("Polling")

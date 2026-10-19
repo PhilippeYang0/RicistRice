@@ -165,6 +165,10 @@ QtObject {
                 Component {
                     NotificationsPage {}
                 }
+                // RicistRice: idle timeouts page, not in caelestia (sub-page index 2)
+                Component {
+                    IdlePage {}
+                }
             }
         },
         Component {
