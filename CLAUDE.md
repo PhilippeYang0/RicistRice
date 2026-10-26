@@ -74,7 +74,7 @@ measured lightness/colourfulness (`smart_opts` in `theme.sh`, via ImageMagick).
 │   ├── hypr/              #   → ~/.config/hypr (Lua; tweak variables.lua)
 │   ├── quickshell/        #   → ~/.config/quickshell (caelestia-shell QML, Quickshell's default config)
 │   ├── caelestia/         #   → ~/.config/caelestia (the shell's shell.json overrides)
-│   ├── ricistrice/        #   → ~/.config/ricistrice (bin/theme.sh, bin/fetch.sh, themes/ palettes, term-colours.toml)
+│   ├── ricistrice/        #   → ~/.config/ricistrice (bin/theme.sh, bin/fetch.sh, bin/app.sh, themes/ palettes, term-colours.toml)
 │   ├── kitty/             #   → ~/.config/kitty (terminal; includes the theme's kitty-colours.conf)
 │   ├── zsh/               #   → ~/.config/zsh (zshrc; ~/.zshrc only sources it, since deploy can't reach ~)
 │   ├── starship/          #   → ~/.config/starship (prompt; zshrc points STARSHIP_CONFIG here)
@@ -220,13 +220,14 @@ of our own rice. Never edit files inside `refs/`; copy the parts we want into
   shell's power-profile switch does nothing without it
 - The waybar/hyprpaper leftovers are gone (removed with the Quickshell + awww
   takeover). The live `~/.config/waybar` still exists, since deploy never deletes
-- **Terminal setup is written but not deployed yet.** To go live: `scripts/bootstrap.sh`
-  (installs `starship`), deploy `kitty zsh starship fastfetch ricistrice caelestia hypr`,
-  replace `~/.zshrc` with the single line `source ~/.config/zsh/zshrc` (the old
-  one is the JaKooLit installer's, pokemon greeting included), then run
-  `~/.config/ricistrice/bin/theme.sh restore` once so `kitty-colours.conf` exists. The logo box
-  (18 rows × 26 cols, aspect kept, in `fetch.sh`) hasn't been seen on the real
-  screen yet. The current logo (`~/Pictures/Logos/default.webp`) is a tall
-  full-body image, so it may need cropping to read well at that size
+- **Terminal setup is live** (since 2026-10-27): `~/.zshrc` is the single line
+  `source ~/.config/zsh/zshrc`. The JaKooLit installer's old one (agnosterzak
+  prompt, pokemon greeting, both rejected as too bright to read) is kept at
+  `~/.zshrc.jakoolit.bak`. On a fresh install this step is manual, since deploy
+  can't reach `~`
+- `app` (zsh alias for `dotfiles/ricistrice/bin/app.sh`) adds a program or file
+  to the launcher by writing `~/.local/share/applications/app-<name>.desktop`
+  (`app ls`, `app rm <name>`). Not yet checked whether the launcher picks a new
+  entry up without a shell restart
 - No automated QML check yet — `check.sh` covers shell scripts and Hyprland
   only. Quickshell is installed now, so this is unblocked
