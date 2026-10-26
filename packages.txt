@@ -96,6 +96,7 @@ zsh                       # used by: dotfiles/zsh/zshrc (the login shell)
 starship                  # used by: dotfiles/zsh/zshrc (prompt), dotfiles/starship
 fastfetch                 # used by: dotfiles/ricistrice/bin/fetch.sh (greeting in every new terminal), dotfiles/fastfetch
 lsd                       # used by: dotfiles/zsh/zshrc (ls aliases)
+xdg-utils                 # used by: dotfiles/ricistrice/bin/app.sh (launcher entries for non-program files run xdg-open)
 
 # SpotX-Bash (see [manual]) refuses to run without these
 perl                      # used by: SpotX-Bash (patches Spotify)

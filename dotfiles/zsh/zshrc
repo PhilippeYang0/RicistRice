@@ -32,3 +32,6 @@ alias l='ls -l'
 alias la='ls -a'
 alias lla='ls -la'
 alias lt='ls --tree'
+
+# Add a program or file to the app launcher (see ~/.config/ricistrice/bin/app.sh)
+alias app="$HOME/.config/ricistrice/bin/app.sh"
