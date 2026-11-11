@@ -22,6 +22,12 @@ hl.on("hyprland.start", function()
     -- Forward bluetooth media commands to MPRIS
     hl.exec_cmd("mpris-proxy")
 
+    -- RicistRice: not in caelestia. Ubuntu's update pop-up (opens Software
+    -- Updater when apt updates are waiting). Cinnamon starts it from
+    -- /etc/xdg/autostart, which Hyprland ignores. The 60s wait copies that
+    -- file's X-GNOME-Autostart-Delay so it doesn't pop up mid-login.
+    hl.exec_cmd("sh -c 'sleep 60 && exec update-notifier'")
+
     -- Wallpaper: awww draws it (the shell's own wallpaper layer is turned off in
     -- ~/.config/caelestia/shell.json); theme.sh restore waits for the daemon,
     -- then puts back the last wallpaper and theme colours

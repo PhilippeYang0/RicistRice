@@ -88,6 +88,8 @@ gnome-keyring             # used by: hypr/hyprland/execs.lua (secrets)
 policykit-1-gnome         # used by: hypr/hyprland/execs.lua (polkit agent; Cinnamon has its own, Hyprland needs one)
 bluez                     # used by: hypr/hyprland/execs.lua (mpris-proxy)
 libglib2.0-bin            # used by: hypr/hyprland/execs.lua (gsettings cursor)
+update-notifier           # used by: hypr/hyprland/execs.lua (update pop-up)
+update-manager            # used by: update-notifier (the Software Updater window it opens)
 nwg-displays              # used by: writes hypr/monitors.lua and workspaces.lua (GUI monitor layout)
 
 # terminal + shell (dotfiles/kitty, zsh, starship, fastfetch)
